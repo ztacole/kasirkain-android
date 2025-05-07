@@ -25,7 +25,7 @@ import com.takumi.kasirkain.R
 fun AppBottomBar(
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    onOpenScanner: (Boolean)-> Unit
+    onOpenScanner: ()-> Unit
 ) {
     NavigationBar(
         modifier = modifier.fillMaxWidth(),
@@ -59,15 +59,18 @@ fun AppBottomBar(
             NavigationBarItem(
                 selected = item.route == currentRoute,
                 onClick = {
-                    if (item.route == scanBarcodeRoute) onOpenScanner
-                    else {
-                        navController.navigate(item.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                        }
+                    if (item.route == scanBarcodeRoute) {
+                        onOpenScanner()
+                        return@NavigationBarItem
                     }
+
+                    navController.navigate(item.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                    }
+
                 },
                 icon = {
                     if (currentRoute == item.route) Icon(painter = painterResource(item.selectedIcon), null)
