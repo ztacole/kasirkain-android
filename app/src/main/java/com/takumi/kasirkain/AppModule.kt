@@ -12,10 +12,12 @@ import com.takumi.kasirkain.data.repository.AuthRepositoryImpl
 import com.takumi.kasirkain.data.repository.CategoryRepositoryImpl
 import com.takumi.kasirkain.data.repository.ProductRepositoryImpl
 import com.takumi.kasirkain.data.repository.TokenRepositoryImpl
+import com.takumi.kasirkain.data.repository.TransactionRepositoryImpl
 import com.takumi.kasirkain.domain.repository.AuthRepository
 import com.takumi.kasirkain.domain.repository.CategoryRepository
 import com.takumi.kasirkain.domain.repository.ProductRepository
 import com.takumi.kasirkain.domain.repository.TokenRepository
+import com.takumi.kasirkain.domain.repository.TransactionRepository
 import com.takumi.kasirkain.domain.usecase.GetProductUseCase
 import dagger.Module
 import dagger.Provides
@@ -34,11 +36,13 @@ object AppModule {
 
     @Provides
     // Local
-//    fun provideBaseUrl(): String = "http://10.0.2.2:8000/api/"
+    fun provideBaseUrl(): String = "http://10.0.2.2:8000/api/"
     // TP-LINK_2699
-//    fun provideBaseUrl(): String = "http://192.168.1.114:8000/api/"
+//    fun provideBaseUrl(): String = "http://192.168.1.137:8000/api/"
     // Home
-    fun provideBaseUrl(): String = "http://192.168.1.15:8000/api/"
+//    fun provideBaseUrl(): String = "http://192.168.1.8:8000/api/"
+    // TP-LINK_222B
+//    fun provideBaseUrl(): String = "http://192.168.0.116:8000/api/"
 
     @Provides
     @Singleton
@@ -115,4 +119,10 @@ object AppModule {
     fun provideCategoryRepository(
         remote: RemoteDataSource
     ): CategoryRepository = CategoryRepositoryImpl(remote)
+
+    @Provides
+    @Singleton
+    fun provideTransactionRepository(
+        remote: RemoteDataSource
+    ): TransactionRepository = TransactionRepositoryImpl(remote)
 }
