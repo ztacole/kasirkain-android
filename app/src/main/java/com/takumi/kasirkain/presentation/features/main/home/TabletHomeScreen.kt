@@ -1,5 +1,6 @@
 package com.takumi.kasirkain.presentation.features.main.home
 
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -44,6 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -55,6 +58,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.takumi.kasirkain.R
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
+import com.takumi.kasirkain.domain.model.ProductVariant
+import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppLazyRow
 import com.takumi.kasirkain.presentation.common.components.AppLazyVerticalGrid
 import com.takumi.kasirkain.presentation.common.components.ErrorDialog
@@ -63,6 +68,7 @@ import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.components.CategoryCard
 import com.takumi.kasirkain.presentation.features.main.home.components.LoadingTabletProduct
 import com.takumi.kasirkain.presentation.features.main.home.components.ProductCard
+import com.takumi.kasirkain.presentation.features.main.home.components.ProductVariantCard
 import com.takumi.kasirkain.presentation.features.main.home.components.SearchTextField
 import com.takumi.kasirkain.presentation.features.main.home.components.TabletProductCard
 import com.takumi.kasirkain.presentation.features.scan.ScanViewModel
@@ -84,6 +90,7 @@ fun TabletHomeScreen(
 
     val products by homeViewModel.products.collectAsStateWithLifecycle()
     val categories by homeViewModel.categories.collectAsStateWithLifecycle()
+    val productVariants by homeViewModel.productVariants.collectAsStateWithLifecycle()
 
     val productVariant by scanViewModel.productVariant.collectAsState()
     var showRequestPermission by remember { mutableStateOf(false) }
@@ -108,6 +115,12 @@ fun TabletHomeScreen(
         homeViewModel.getProduct(selectedCategory.toString(), query)
     }
 
+    LaunchedEffect(selectedProduct) {
+        selectedProduct?.let {
+            homeViewModel.getProductVariants(it.id)
+        }
+    }
+
     Row(
         modifier.fillMaxSize()
     ) {
@@ -123,40 +136,12 @@ fun TabletHomeScreen(
                 selectedCategory = selectedCategory,
                 onBarcodeScanning = { showRequestPermission = true }
             )
-            AppLazyVerticalGrid(
-                columns = GridCells.Fixed(5),
-                modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
-                horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
-                contentPadding = PaddingValues(
-                    LocalSpacing.current.paddingMedium.dp
-                )
-            ) {
-                products.let { state ->
-                    when (state) {
-                        is UiState.Idle -> {}
-                        is UiState.Loading -> {
-                            items(5) { LoadingTabletProduct() }
-                        }
-
-                        is UiState.Success<List<Product>> -> {
-                            items(state.data, key = { it.id }) { product ->
-                                TabletProductCard(
-                                    modifier = Modifier,
-                                    name = product.name,
-                                    price = product.price,
-                                    variantCount = product.variantCount,
-                                    imageName = product.image
-                                )
-                            }
-                        }
-
-                        is UiState.Error -> {
-                            Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
+            TabletHomeContentSection(
+                scrollBehavior = scrollBehavior,
+                products = products,
+                context = context,
+                onProductClick = { selectedProduct = it }
+            )
         }
         VerticalDivider(
             modifier = Modifier.shadow(
@@ -174,7 +159,9 @@ fun TabletHomeScreen(
                 .padding(WindowInsets.statusBars.asPaddingValues())
         ) {
             if (selectedProduct == null) {
-                Box(Modifier.fillMaxSize().padding(horizontal = LocalSpacing.current.paddingMedium.dp)) {
+                Box(Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = LocalSpacing.current.paddingMedium.dp)) {
                     Text(
                         text = "Varian Produk",
                         style = MaterialTheme.typography.titleLarge,
@@ -186,6 +173,47 @@ fun TabletHomeScreen(
                         color = MaterialTheme.colorScheme.onSecondary,
                         modifier = Modifier.align(Alignment.Center)
                     )
+                }
+            } else {
+                productVariants.let { state ->
+                    when (state) {
+                        is UiState.Idle -> {}
+                        is UiState.Loading -> {}
+                        is UiState.Success<List<ProductVariant>> -> {
+                            selectedProduct?.let { product ->
+                                Column(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
+                                ) {
+                                    Text(
+                                        text = product.name,
+                                        style = MaterialTheme.typography.titleLarge,
+                                    )
+                                    Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
+                                    AppLazyColumn(
+                                        modifier = Modifier.weight(1f).fillMaxSize(),
+                                        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
+                                        contentPadding = PaddingValues(horizontal = LocalSpacing.current.paddingSmall.dp)
+                                    ) {
+                                        items(state.data, key = {it.id}) { variant ->
+                                            ProductVariantCard(
+                                                modifier = Modifier,
+                                                barcode = variant.barcode,
+                                                size = variant.size,
+                                                color = variant.color,
+                                                stock = variant.stock,
+                                                isChecked = false
+                                            ) { }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        is UiState.Error -> {
+                            Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         }
@@ -333,10 +361,8 @@ fun TabletHomeHeaderSection(
                     is UiState.Success<List<Category>> -> {
                         items(state.data, key = { it.id }) { category ->
                             CategoryCard(
-                                modifier = Modifier
-                                    .clickable(
-                                        onClick = { onSelectedCategory(category.id) }
-                                    ),
+                                onClick = { onSelectedCategory(category.id) },
+                                modifier = Modifier,
                                 text = category.name,
                                 selected = selectedCategory == category.id
                             )
@@ -358,5 +384,53 @@ fun TabletHomeHeaderSection(
             ),
             color = Color.Transparent
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TabletHomeContentSection(
+    scrollBehavior: TopAppBarScrollBehavior,
+    products: UiState<List<Product>>,
+    context: Context,
+    onProductClick: (Product) -> Unit
+) {
+    AppLazyVerticalGrid(
+        columns = GridCells.Fixed(5),
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
+        horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
+        contentPadding = PaddingValues(
+            LocalSpacing.current.paddingMedium.dp
+        )
+    ) {
+        products.let { state ->
+            when (state) {
+                is UiState.Idle -> {}
+                is UiState.Loading -> {
+                    items(5) { LoadingTabletProduct() }
+                }
+
+                is UiState.Success<List<Product>> -> {
+                    items(state.data, key = { it.id }) { product ->
+                        TabletProductCard(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.large)
+                                .clickable {
+                                    onProductClick(product)
+                                },
+                            name = product.name,
+                            price = product.price,
+                            variantCount = product.variantCount,
+                            imageName = product.image
+                        )
+                    }
+                }
+
+                is UiState.Error -> {
+                    Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

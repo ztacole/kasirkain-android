@@ -191,10 +191,8 @@ fun HomeHeaderSection(
                     is UiState.Success<List<Category>> -> {
                         items(state.data, key = {it.id}) { category ->
                             CategoryCard(
-                                modifier = Modifier
-                                    .clickable(
-                                        onClick = { onSelectedCategory(category.id) }
-                                    ),
+                                onClick = { onSelectedCategory(category.id) },
+                                modifier = Modifier,
                                 text = category.name,
                                 selected = selectedCategory ==  category.id
                             )
