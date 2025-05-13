@@ -1,6 +1,7 @@
 package com.takumi.kasirkain.domain.usecase
 
 import com.takumi.kasirkain.domain.model.Product
+import com.takumi.kasirkain.domain.model.ProductVariant
 import com.takumi.kasirkain.domain.repository.ProductRepository
 import javax.inject.Inject
 

@@ -7,8 +7,12 @@ import com.takumi.kasirkain.data.remote.request.LoginRequest
 import com.takumi.kasirkain.data.remote.response.BaseResponse
 import com.takumi.kasirkain.data.remote.response.CategoryResponse
 import com.takumi.kasirkain.data.remote.response.ErrorResponse
+import com.takumi.kasirkain.data.remote.response.ProductDetailResponse
 import com.takumi.kasirkain.data.remote.response.ProductResponse
+import com.takumi.kasirkain.data.remote.response.ProductVariantResponse
+import com.takumi.kasirkain.data.remote.response.TransactionResponse
 import com.takumi.kasirkain.domain.model.Product
+import com.takumi.kasirkain.domain.model.Transaction
 import retrofit2.Response
 import javax.inject.Inject
 
@@ -41,6 +45,25 @@ class RemoteDataSource @Inject constructor(
             return response.body()?.data ?: emptyList()
         } else {
             throw Exception("Gagal memuat kategori: ${response.message()}")
+        }
+    }
+
+    suspend fun getProductVariantDetail(barcode: String): ProductDetailResponse {
+        val response = apiService.getProductVariantDetail(barcode)
+        if (response.isSuccessful) {
+            return response.body()?.data ?: throw Exception("Data kosong")
+        } else {
+            if (response.code() == 404) throw Exception("Produk tidak ditemukan")
+            throw Exception("Gagal memuat varian produk: ${response.message()}")
+        }
+    }
+
+    suspend fun getTransactions(): List<TransactionResponse> {
+        val response = apiService.getTransactions()
+        if (response.isSuccessful) {
+            return response.body()?.data ?: throw Exception("Data Kosong")
+        } else {
+            throw Exception("Gagal memuat transaksi: ${response.message()}")
         }
     }
 

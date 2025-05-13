@@ -22,7 +22,6 @@ class TokenInterceptor(
                 .build()
             val response = chain.proceed(newRequest)
 
-            Log.d("TAG", "intercept: ${response.code}")
             if (response.code == 401) {
                 runBlocking {
                     clearToken()
