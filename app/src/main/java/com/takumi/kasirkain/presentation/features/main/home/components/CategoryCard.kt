@@ -3,6 +3,8 @@ package com.takumi.kasirkain.presentation.features.main.home.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -17,11 +19,13 @@ import androidx.compose.ui.unit.dp
 fun CategoryCard(
     modifier: Modifier = Modifier,
     text: String,
+    onClick: () -> Unit,
     selected: Boolean
 ) {
-    Card(
+    Button(
+        onClick = onClick,
         modifier = modifier,
-        colors = CardDefaults.cardColors(
+        colors = ButtonDefaults.buttonColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
         ),
         shape = MaterialTheme.shapes.small,
@@ -30,7 +34,7 @@ fun CategoryCard(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary,
             textAlign = TextAlign.Center
         )
