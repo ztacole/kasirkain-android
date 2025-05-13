@@ -4,6 +4,7 @@ import android.graphics.drawable.Icon
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -43,8 +44,8 @@ fun AppBottomBar(
             ),
             NavigationItem(
                 name = "Scan",
-                selectedIcon = R.drawable.ic_scan_filled,
-                unselectedIcon = R.drawable.ic_scan_filled,
+                selectedIcon = R.drawable.ic_scanner,
+                unselectedIcon = R.drawable.ic_scanner,
                 route = scanBarcodeRoute
             ),
             NavigationItem(
@@ -91,10 +92,3 @@ fun AppBottomBar(
         }
     }
 }
-
-data class NavigationItem(
-    val name: String,
-    @DrawableRes val selectedIcon: Int,
-    @DrawableRes val unselectedIcon: Int,
-    val route: String
-)
