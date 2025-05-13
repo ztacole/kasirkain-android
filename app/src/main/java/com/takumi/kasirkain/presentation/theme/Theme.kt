@@ -3,7 +3,9 @@ package com.takumi.kasirkain.presentation.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 
 private val LightColorScheme = lightColorScheme(
     primary = Maroon,
@@ -24,11 +26,17 @@ private val LightColorScheme = lightColorScheme(
 fun KasirKainTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = LightColorScheme
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val isTablet = screenWidth >= 600
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val colorScheme = LightColorScheme
+    val spacing = if (isTablet) TabletDimensions else PhoneDimensions
+
+    CompositionLocalProvider(LocalSpacing provides spacing) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
