@@ -37,6 +37,7 @@ import com.takumi.kasirkain.domain.model.Transaction
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.history.components.TransactionCard
+import com.takumi.kasirkain.presentation.theme.LocalSpacing
 import com.takumi.kasirkain.presentation.util.shimmer
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -102,7 +103,7 @@ fun HistoryHeaderSection() {
 
 @Composable
 fun LoadingTransaction() {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = LocalSpacing.current.paddingMedium.dp)) {
         Spacer(
             modifier = Modifier
                 .width(140.dp)
@@ -110,10 +111,10 @@ fun LoadingTransaction() {
                 .clip(MaterialTheme.shapes.medium)
                 .shimmer()
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(LocalSpacing.current.paddingSmall.dp))
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
         ) {
             repeat(2) { LoadingTransactionHeader() }
         }

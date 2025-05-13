@@ -48,6 +48,7 @@ import com.takumi.kasirkain.presentation.features.main.home.HomeScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthTabletScreen
 import com.takumi.kasirkain.presentation.features.main.history.HistoryScreen
+import com.takumi.kasirkain.presentation.features.main.history.TabletHistoryScreen
 import com.takumi.kasirkain.presentation.features.main.home.TabletHomeScreen
 import com.takumi.kasirkain.presentation.features.scan.ScanViewModel
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
@@ -193,7 +194,8 @@ fun AppNavigation(
                     exitTransition = { ExitTransition.None }
                 ) {
                     previousRoute = Screen.History.route
-                    HistoryScreen()
+                    if (deviceType == DeviceType.Phone) HistoryScreen()
+                    else TabletHistoryScreen(scrollBehavior = scrollBehavior)
                 }
             }
 

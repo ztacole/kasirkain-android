@@ -49,22 +49,21 @@ fun TransactionHeaderCard(
         ) {
             Text(
                 text = paymentType,
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.fillMaxWidth(),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1
             )
             Text(
                 text = "Jenis Produk: $productCount",
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.fillMaxWidth(),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1
             )
             Text(
                 text = "Total: ${CoreFunction.formatToRupiah(totalPayment)}",
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.fillMaxWidth(),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1
@@ -73,6 +72,8 @@ fun TransactionHeaderCard(
         Spacer(Modifier.width(8.dp))
         Text(
             text = time,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSecondary,
             fontWeight = FontWeight.SemiBold
         )
     }
