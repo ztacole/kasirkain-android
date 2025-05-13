@@ -1,6 +1,7 @@
 package com.takumi.kasirkain.presentation.features.auth.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -37,14 +39,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.takumi.kasirkain.R
-import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.common.components.ErrorDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
+import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.auth.login.components.LoginForm
 import com.takumi.kasirkain.presentation.theme.KasirKainTheme
+import com.takumi.kasirkain.presentation.theme.LocalSpacing
 
 @Composable
-fun AuthScreen(
+fun AuthTabletScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = hiltViewModel(),
     onLoginSuccess: ()-> Unit
@@ -54,8 +57,6 @@ fun AuthScreen(
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var showErrorDialog by remember { mutableStateOf(false) }
-
-    val scrollState = rememberScrollState()
 
     when (uiState) {
         is UiState.Idle -> {}
@@ -82,42 +83,55 @@ fun AuthScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(scrollState),
     ) {
-        Column(
+        Row(
             modifier = Modifier.fillMaxSize()
         ) {
-            LoginHeaderSection()
-            Spacer(Modifier.height(24.dp))
-            LoginForm(
-                username = username,
-                onUsernameChange = { username = it },
-                password = password,
-                onPasswordChange = { password = it }
+            LoginTabletHeaderSection()
+            Spacer(Modifier.width(24.dp))
+            Column(
+                modifier
+                    .fillMaxWidth()
+                    .align(Alignment.CenterVertically)
             ) {
-                viewModel.login(username, password)
+                Text(
+                    text = "Login",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 40.sp,
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier
+                        .padding(bottom = LocalSpacing.current.paddingSmall.dp)
+                        .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
+                )
+                LoginForm(
+                    modifier = Modifier,
+                    username = username,
+                    onUsernameChange = { username = it },
+                    password = password,
+                    onPasswordChange = { password = it }
+                ) {
+                    viewModel.login(username, password)
+                }
             }
         }
     }
 }
 
 @Composable
-fun LoginHeaderSection() {
+fun LoginTabletHeaderSection() {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.45f)
+            .fillMaxWidth(0.45f)
+            .fillMaxHeight()
     ) {
-        Image(
-            painter = painterResource(R.drawable.shape),
-            contentDescription = null,
+        Box(
             modifier = Modifier
-                .fillMaxSize(),
-            contentScale = ContentScale.FillBounds
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.primaryContainer),
         )
         Row(
             modifier = Modifier
-                .align(Alignment.TopCenter)
+                .align(Alignment.Center)
                 .padding(WindowInsets.statusBars.asPaddingValues())
                 .padding(top = 28.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -126,7 +140,7 @@ fun LoginHeaderSection() {
                 painter = painterResource(R.drawable.kasirkain_logo),
                 contentDescription = null,
                 modifier = Modifier
-                    .size(96.dp),
+                    .size(112.dp),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
             )
             Column(
@@ -135,35 +149,24 @@ fun LoginHeaderSection() {
             ) {
                 Text(
                     text = "KasirKain",
-                    fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.headlineLarge
                 )
                 Text(
                     text = "POS Application",
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }
-        Text(
-            text = "Login",
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 28.sp,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 8.dp)
-        )
     }
 }
 
-@Preview(showSystemUi = true)
+@Preview(name = "Tablet", widthDp = 1280, heightDp = 800)
 @Composable
-private fun Preview() {
+private fun Prev () {
     KasirKainTheme {
-        AuthScreen(
-            onLoginSuccess = {}
-        )
+        AuthTabletScreen {  }
     }
 }

@@ -15,7 +15,7 @@ fun ErrorDialog(
     AlertDialog(
         modifier = modifier,
         containerColor = Color.White,
-        onDismissRequest = onDismiss,
+        onDismissRequest = {  },
         confirmButton = {
             AppButton(
                 text = "OK",

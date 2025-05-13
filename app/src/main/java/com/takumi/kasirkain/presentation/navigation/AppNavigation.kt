@@ -1,45 +1,37 @@
 package com.takumi.kasirkain.presentation.navigation
 
 import android.util.Log
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Box
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.Text
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,222 +41,228 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.common.InputImage
 import com.takumi.kasirkain.presentation.common.components.ErrorDialog
+import com.takumi.kasirkain.presentation.common.components.LoadingDialog
+import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.HomeScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthScreen
+import com.takumi.kasirkain.presentation.features.auth.login.AuthTabletScreen
 import com.takumi.kasirkain.presentation.features.main.history.HistoryScreen
+import com.takumi.kasirkain.presentation.features.main.home.TabletHomeScreen
+import com.takumi.kasirkain.presentation.features.scan.ScanViewModel
+import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
+import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.features.splash.SplashViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import com.takumi.kasirkain.presentation.util.DeviceType
+import com.takumi.kasirkain.presentation.util.getDeviceType
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(
     splashViewModel: SplashViewModel,
+    scanViewModel: ScanViewModel = hiltViewModel(),
     navController: NavHostController = rememberNavController()
 ) {
+    val scope = rememberCoroutineScope()
     val startDestination = splashViewModel.startDestination.value.ifEmpty { "splash" }
     val navBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStack?.destination?.route
+    val deviceType = getDeviceType()
+
+    var previousRoute by rememberSaveable { mutableStateOf("") }
+
+    val productVariant by scanViewModel.productVariant.collectAsState()
 
     var showRequestPermission by remember { mutableStateOf(false) }
 
-    val sheetState = rememberModalBottomSheetState()
-    var showScanner by remember { mutableStateOf(false) }
-
-    var showDeniedDialog by remember { mutableStateOf(false) }
-
-    Scaffold(
-        contentWindowInsets = WindowInsets.ime,
-        bottomBar = {
-            if (currentRoute == Screen.Home.route || currentRoute == Screen.History.route) {
-                AppBottomBar(
-                    modifier = Modifier,
-                    navController = navController,
-                ) { showRequestPermission = true }
-            }
+    val sheetState = rememberModalBottomSheetState(
+        confirmValueChange = {
+            it == SheetValue.Hidden
         }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            enterTransition = {
-                ScreenTransitions.slideTransition()
+    )
+    var showScanner by remember { mutableStateOf(false) }
+    var showDeniedDialog by remember { mutableStateOf(false) }
+    var scanResult by remember { mutableStateOf("") }
+
+    val navDrawerState = rememberDrawerState(DrawerValue.Closed)
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    LaunchedEffect(scanResult) {
+        scanViewModel.getProductVariantDetail(scanResult)
+    }
+
+    BackHandler(enabled = navDrawerState.isOpen) {
+        scope.launch {
+            navDrawerState.close()
+        }
+    }
+
+    AppNavDrawer(
+        modifier = Modifier,
+        drawerState = navDrawerState,
+        navController = navController,
+        onCloseDrawer = {
+            scope.launch { navDrawerState.close() }
+        }
+    ) {
+        Scaffold(
+            contentWindowInsets = WindowInsets.ime,
+            topBar = {
+                if (currentRoute != Screen.Auth.route && currentRoute != "splash") {
+                    AppTopBar(
+                        title = getTitleForRoute(currentRoute),
+                        scrollBehavior = scrollBehavior
+                    ) {
+                        scope.launch { navDrawerState.open() }
+                    }
+                }
             },
-            exitTransition = {
-                ScreenTransitions.slideExitTransition()
-            }
-        ) {
-            composable("splash") {  }
-            composable(Screen.Auth.route) {
-                AuthScreen(
-                    onLoginSuccess = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Auth.route) { inclusive = true }
-                            launchSingleTop = true
+            bottomBar = {
+                if (deviceType == DeviceType.Phone) {
+                    if (currentRoute == Screen.Home.route || currentRoute == Screen.History.route) {
+                        Column {
+                            HorizontalDivider(
+                                modifier = Modifier.shadow(2.dp),
+                                color = Color.LightGray.copy(alpha = 0.3f)
+                            )
+                            AppBottomBar(
+                                modifier = Modifier,
+                                navController = navController,
+                            ) { showRequestPermission = true }
                         }
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = startDestination,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                enterTransition = {
+                    ScreenTransitions.slideTransition()
+                },
+                exitTransition = {
+                    ScreenTransitions.slideExitTransition()
+                }
+            ) {
+                composable("splash") { }
+                composable(Screen.Auth.route) {
+                    if (deviceType == DeviceType.Tablet) {
+                        AuthTabletScreen(
+                            onLoginSuccess = {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(Screen.Auth.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
+                    }
+                    else {
+                        AuthScreen(
+                            onLoginSuccess = {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(Screen.Auth.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
+                    }
+                }
+                composable(
+                    Screen.Home.route,
+                    enterTransition = {
+                        if (previousRoute == Screen.History.route) EnterTransition.None
+                        else ScreenTransitions.slideTransition()
+                    },
+                    exitTransition = {
+                        if (currentRoute == Screen.History.route) ExitTransition.None
+                        else ScreenTransitions.slideExitTransition()
+                    }
+                ) {
+                    previousRoute = Screen.Home.route
+                    if (deviceType == DeviceType.Tablet) TabletHomeScreen(scrollBehavior = scrollBehavior)
+                    else HomeScreen()
+                }
+                composable(
+                    Screen.History.route,
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None }
+                ) {
+                    previousRoute = Screen.History.route
+                    HistoryScreen()
+                }
+            }
+
+            if (showRequestPermission) {
+                RequestCameraPermission(
+                    onGranted = {
+                        showScanner = true
+                    },
+                    onDenied = {
+                        showDeniedDialog = true
                     }
                 )
             }
-            composable(Screen.Home.route) {
-                HomeScreen()
-            }
-            composable(Screen.History.route) {
-                HistoryScreen()
-            }
-        }
 
-        if (showRequestPermission) {
-            RequestCameraPermission(
-                onGranted = {
-                    showScanner = true
-                },
-                onDenied = {
-                    showDeniedDialog = true
-                }
-            )
-        }
-
-        if (showScanner) {
-            ScannerBottomSheet(
-                modifier = Modifier,
-                sheetState = sheetState,
-                onDismiss = {
-                    showRequestPermission = false
-                    showScanner = false
-                },
-                onBarcodeScanned = {
-                    Log.d("Barcode Value", "Barcode value: $it")
-                }
-            )
-        }
-
-        if (showDeniedDialog) {
-            ErrorDialog(
-                message = "Izin kamera diperlukan!"
-            ) {
-                showRequestPermission = false
+            if (showScanner) {
                 showDeniedDialog = false
+                ScannerBottomSheet(
+                    modifier = Modifier,
+                    sheetState = sheetState,
+                    onDismiss = {
+                        showRequestPermission = false
+                        showScanner = false
+                    },
+                    onBarcodeScanned = {
+                        scanResult = it
+                    }
+                )
             }
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ScannerBottomSheet(
-    modifier: Modifier = Modifier,
-    sheetState: SheetState,
-    onDismiss: ()-> Unit,
-    onBarcodeScanned: (String) -> Unit
-) {
-    ModalBottomSheet(
-        modifier = modifier,
-        onDismissRequest = { onDismiss() },
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Scan Barcode",
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
-            )
-            Spacer(Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(300.dp)
-                    .clip(MaterialTheme.shapes.large)
-            ) {
-                BarcodeScannerCamera {
-                    onBarcodeScanned(it)
-                    onDismiss()
+            if (showDeniedDialog) {
+                ErrorDialog(
+                    message = "Izin kamera diperlukan!"
+                ) {
+                    showRequestPermission = false
+                    showDeniedDialog = false
                 }
             }
-        }
-    }
-}
 
-@androidx.annotation.OptIn(ExperimentalGetImage::class)
-@Composable
-fun BarcodeScannerCamera(
-    modifier: Modifier = Modifier,
-    onBarcodeScanned: (String)-> Unit
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+            if (scanResult.isNotEmpty()) {
+                productVariant.let { state ->
+                    when (state) {
+                        is UiState.Idle -> {}
+                        is UiState.Loading -> {
+                            LoadingDialog()
+                        }
 
-    AndroidView(
-        modifier = modifier.fillMaxSize(),
-        factory = { ctx ->
-            val previewView = PreviewView(ctx)
+                        is UiState.Success -> {
+                            AfterScanDialog(
+                                onDismissRequest = { scanResult = "" },
+                                onAddToCart = { data ->
+                                    if (data != null) Log.d(
+                                        "Product Variant",
+                                        "Product Variant: $data"
+                                    )
+                                },
+                                product = state.data
+                            )
+                        }
 
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
-
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-
-                val barcodeScanner = BarcodeScanning.getClient()
-
-                val imageAnalyzer = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                    .also {
-                        it.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
-                            val mediaImage = imageProxy.image
-
-                            if (mediaImage != null) {
-                                val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                                barcodeScanner.process(image)
-                                    .addOnSuccessListener { barcodes ->
-                                        for (barcode in barcodes) {
-                                            barcode.rawValue?.let {
-                                                onBarcodeScanned(it)
-                                                return@addOnSuccessListener
-                                            }
-                                        }
-                                    }
-                                    .addOnFailureListener {
-                                        Log.e("BarcodeScanner", "Error: ${it.message}")
-                                    }
-                                    .addOnCompleteListener {
-                                        imageProxy.close()
-                                    }
-                            }
-                            else imageProxy.close()
+                        is UiState.Error -> {
+                            ErrorDialog(
+                                message = state.message
+                            ) { scanResult = "" }
                         }
                     }
-
-                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-                try {
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner, cameraSelector, preview, imageAnalyzer
-                    )
-                } catch (e: Exception) {
-                    Log.e("BarcodeCamera", "Camera binding failed", e)
                 }
-            }, ContextCompat.getMainExecutor(ctx))
-
-            previewView
+            }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -286,8 +284,17 @@ fun RequestCameraPermission(
         permissionState.status.shouldShowRationale -> {
             onDenied()
         }
-        else -> {
+        !permissionState.status.isGranted && !permissionState.status.shouldShowRationale -> {
             onDenied()
         }
+    }
+}
+
+fun getTitleForRoute(route: String?): String {
+    return when (route) {
+        Screen.Home.route -> "Beranda"
+        Screen.History.route -> "Riwayat"
+        Screen.Auth.route -> "Login"
+        else -> "KasirKain"
     }
 }

@@ -21,6 +21,10 @@ fun AppButton(
         enabled = enabled,
         shape = shape
     ) {
-        Text(text)
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
     }
 }

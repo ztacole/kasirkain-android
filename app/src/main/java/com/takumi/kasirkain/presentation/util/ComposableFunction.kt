@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 
 @Composable
 fun Modifier.shimmer(
@@ -49,4 +50,14 @@ fun Modifier.shimmer(
     )
 
     return this.background(brush)
+}
+
+enum class DeviceType {
+    Phone, Tablet
+}
+
+@Composable
+fun getDeviceType(): DeviceType {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    return if (screenWidth >= 600) DeviceType.Tablet else DeviceType.Phone
 }
