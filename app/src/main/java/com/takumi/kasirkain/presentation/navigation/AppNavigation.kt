@@ -47,10 +47,11 @@ import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.HomeScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthTabletScreen
+import com.takumi.kasirkain.presentation.features.cart.CartScreen
 import com.takumi.kasirkain.presentation.features.main.history.HistoryScreen
 import com.takumi.kasirkain.presentation.features.main.history.TabletHistoryScreen
+import com.takumi.kasirkain.presentation.features.main.home.HomeViewModel
 import com.takumi.kasirkain.presentation.features.main.home.TabletHomeScreen
-import com.takumi.kasirkain.presentation.features.scan.ScanViewModel
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.features.splash.SplashViewModel
@@ -62,7 +63,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavigation(
     splashViewModel: SplashViewModel,
-    scanViewModel: ScanViewModel = hiltViewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     navController: NavHostController = rememberNavController()
 ) {
     val scope = rememberCoroutineScope()
@@ -73,7 +74,7 @@ fun AppNavigation(
 
     var previousRoute by rememberSaveable { mutableStateOf("") }
 
-    val productVariant by scanViewModel.productVariant.collectAsState()
+    val productVariant by viewModel.productVariant.collectAsState()
 
     var showRequestPermission by remember { mutableStateOf(false) }
 
@@ -90,7 +91,7 @@ fun AppNavigation(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     LaunchedEffect(scanResult) {
-        scanViewModel.getProductVariantDetail(scanResult)
+        viewModel.getProductVariantDetail(scanResult)
     }
 
     BackHandler(enabled = navDrawerState.isOpen) {
@@ -196,6 +197,11 @@ fun AppNavigation(
                     previousRoute = Screen.History.route
                     if (deviceType == DeviceType.Phone) HistoryScreen()
                     else TabletHistoryScreen(scrollBehavior = scrollBehavior)
+                }
+                composable(
+                    Screen.Cart.route
+                ) {
+                    CartScreen()
                 }
             }
 

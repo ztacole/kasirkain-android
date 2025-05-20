@@ -79,6 +79,10 @@ fun HomeScreen(
         else viewModel.getProduct()
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.getCategories()
+    }
+
     AppLazyColumn(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),

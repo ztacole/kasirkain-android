@@ -4,16 +4,19 @@ import android.content.Context
 import androidx.room.Room
 import com.takumi.kasirkain.data.local.AppDatabase
 import com.takumi.kasirkain.data.local.LocalDataSource
+import com.takumi.kasirkain.data.local.dao.CartDao
 import com.takumi.kasirkain.data.local.dao.TokenDao
 import com.takumi.kasirkain.data.remote.ApiService
 import com.takumi.kasirkain.data.remote.RemoteDataSource
 import com.takumi.kasirkain.data.remote.TokenInterceptor
 import com.takumi.kasirkain.data.repository.AuthRepositoryImpl
+import com.takumi.kasirkain.data.repository.CartRepositoryImpl
 import com.takumi.kasirkain.data.repository.CategoryRepositoryImpl
 import com.takumi.kasirkain.data.repository.ProductRepositoryImpl
 import com.takumi.kasirkain.data.repository.TokenRepositoryImpl
 import com.takumi.kasirkain.data.repository.TransactionRepositoryImpl
 import com.takumi.kasirkain.domain.repository.AuthRepository
+import com.takumi.kasirkain.domain.repository.CartRepository
 import com.takumi.kasirkain.domain.repository.CategoryRepository
 import com.takumi.kasirkain.domain.repository.ProductRepository
 import com.takumi.kasirkain.domain.repository.TokenRepository
@@ -36,13 +39,13 @@ object AppModule {
 
     @Provides
     // Local
-    fun provideBaseUrl(): String = "http://10.0.2.2:8000/api/"
+//    fun provideBaseUrl(): String = "http://10.0.2.2:8000/api/"
     // TP-LINK_2699
 //    fun provideBaseUrl(): String = "http://192.168.1.137:8000/api/"
     // Home
 //    fun provideBaseUrl(): String = "http://192.168.1.8:8000/api/"
     // TP-LINK_222B
-//    fun provideBaseUrl(): String = "http://192.168.0.116:8000/api/"
+    fun provideBaseUrl(): String = "http://192.168.1.105:8000/api/"
 
     @Provides
     @Singleton
@@ -68,12 +71,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCartDao(
+        db: AppDatabase
+    ): CartDao = db.cartDao()
+
+    @Provides
+    @Singleton
     fun provideOkHttp(
-        tokenDao: TokenDao
+        localDataSource: LocalDataSource
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(TokenInterceptor(tokenProvider =  {
-            tokenDao.getToken()?.token
-        }, clearToken = {tokenDao.clearToken()}))
+            localDataSource.getToken()
+        }, clearToken = {localDataSource.clearToken()}))
         .build()
 
     @Provides
@@ -104,8 +113,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTokenRepository(
-        dao: TokenDao
-    ): TokenRepository = TokenRepositoryImpl(dao)
+        local: LocalDataSource
+    ): TokenRepository = TokenRepositoryImpl(local)
 
     @Provides
     @Singleton
@@ -125,4 +134,10 @@ object AppModule {
     fun provideTransactionRepository(
         remote: RemoteDataSource
     ): TransactionRepository = TransactionRepositoryImpl(remote)
+
+    @Provides
+    @Singleton
+    fun provideCartRepository(
+        local: LocalDataSource
+    ): CartRepository = CartRepositoryImpl(local)
 }

@@ -1,17 +1,19 @@
 package com.takumi.kasirkain.presentation.features.main.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.takumi.kasirkain.domain.model.CartItem
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
+import com.takumi.kasirkain.domain.model.ProductDetail
 import com.takumi.kasirkain.domain.model.ProductVariant
+import com.takumi.kasirkain.domain.usecase.GetCartItemsUseCase
 import com.takumi.kasirkain.domain.usecase.GetCategoriesUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductUseCase
-import com.takumi.kasirkain.domain.usecase.GetProductVariantDetailUseCase
+import com.takumi.kasirkain.domain.usecase.GetProductVariantByBarcodeUseCase
+import com.takumi.kasirkain.domain.usecase.GetProductVariantsUseCase
 import com.takumi.kasirkain.presentation.common.state.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -21,15 +23,31 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getProductUseCase: GetProductUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val getProductVariantsUseCase: GetProductVariantsUseCase,
+    private val getProductVariantByBarcodeUseCase: GetProductVariantByBarcodeUseCase,
+    private val getCartItemsUseCase: GetCartItemsUseCase
 ): ViewModel() {
     private val _products: MutableStateFlow<UiState<List<Product>>> = MutableStateFlow(UiState.Idle)
     private val _categories: MutableStateFlow<UiState<List<Category>>> = MutableStateFlow(UiState.Idle)
+    private val _productVariants: MutableStateFlow<UiState<List<ProductVariant>>> =
+        MutableStateFlow(UiState.Idle)
+    private val _productVariant: MutableStateFlow<UiState<ProductDetail>> = MutableStateFlow(UiState.Idle)
+    private val _cartItems: MutableStateFlow<List<CartItem>> = MutableStateFlow(emptyList())
 
     val products = _products.asStateFlow()
     val categories = _categories.asStateFlow()
+    val productVariants = _productVariants.asStateFlow()
+    val productVariant = _productVariant.asStateFlow()
+    val cartItems = _cartItems.asStateFlow()
 
     init {
-        getCategories()
+        getCartItems()
+    }
+
+    private fun getCartItems() {
+        viewModelScope.launch {
+
+        }
     }
 
     fun getProduct(category: String? = null, search: String? = null) {
@@ -47,7 +65,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun getCategories() {
+    fun getCategories() {
         _categories.value = UiState.Loading
         viewModelScope.launch {
             try {
@@ -58,6 +76,31 @@ class HomeViewModel @Inject constructor(
                 _categories.value = UiState.Success(categories)
             } catch (e: Exception) {
                 _categories.value = UiState.Error(e.message ?: "Unknown Error")
+            }
+        }
+    }
+
+    fun getProductVariants(id: Int) {
+        _productVariants.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                val response = getProductVariantsUseCase(id)
+                _productVariants.value = UiState.Success(response)
+            } catch (e: Exception) {
+                _productVariants.value = UiState.Error(e.message ?: "Unknown Error")
+            }
+        }
+    }
+
+    fun getProductVariantDetail(barcode: String) {
+        viewModelScope.launch {
+            _productVariant.value = UiState.Loading
+            try {
+                if (barcode.isEmpty()) return@launch
+                val response = getProductVariantByBarcodeUseCase(barcode)
+                _productVariant.value = UiState.Success(response)
+            } catch (e: Exception) {
+                _productVariant.value = UiState.Error(e.message ?: "Unknown Error")
             }
         }
     }

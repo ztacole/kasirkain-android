@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -30,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.VerticalDivider
@@ -67,11 +66,9 @@ import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.components.CategoryCard
 import com.takumi.kasirkain.presentation.features.main.home.components.LoadingTabletProduct
-import com.takumi.kasirkain.presentation.features.main.home.components.ProductCard
 import com.takumi.kasirkain.presentation.features.main.home.components.ProductVariantCard
 import com.takumi.kasirkain.presentation.features.main.home.components.SearchTextField
 import com.takumi.kasirkain.presentation.features.main.home.components.TabletProductCard
-import com.takumi.kasirkain.presentation.features.scan.ScanViewModel
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.navigation.RequestCameraPermission
@@ -82,17 +79,17 @@ import com.takumi.kasirkain.presentation.theme.LocalSpacing
 @Composable
 fun TabletHomeScreen(
     modifier: Modifier = Modifier,
-    scanViewModel: ScanViewModel = hiltViewModel(),
-    homeViewModel: HomeViewModel = hiltViewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     val context = LocalContext.current
 
-    val products by homeViewModel.products.collectAsStateWithLifecycle()
-    val categories by homeViewModel.categories.collectAsStateWithLifecycle()
-    val productVariants by homeViewModel.productVariants.collectAsStateWithLifecycle()
+    val products by viewModel.products.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val productVariants by viewModel.productVariants.collectAsStateWithLifecycle()
+    val productVariant by viewModel.productVariant.collectAsStateWithLifecycle()
+    val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
 
-    val productVariant by scanViewModel.productVariant.collectAsState()
     var showRequestPermission by remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState(
@@ -102,22 +99,26 @@ fun TabletHomeScreen(
     var showDeniedDialog by remember { mutableStateOf(false) }
     var scanResult by remember { mutableStateOf("") }
 
-    var selectedProduct by rememberSaveable { mutableStateOf<Product?>(null) }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var selectedCategory by rememberSaveable { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        viewModel.getCategories()
+    }
+
     LaunchedEffect(selectedCategory) {
-        if (selectedCategory > 0) homeViewModel.getProduct(selectedCategory.toString(), query)
-        else homeViewModel.getProduct(query)
+        if (selectedCategory > 0) viewModel.getProduct(selectedCategory.toString(), query)
+        else viewModel.getProduct(query)
     }
 
     LaunchedEffect(query) {
-        homeViewModel.getProduct(selectedCategory.toString(), query)
+        viewModel.getProduct(selectedCategory.toString(), query)
     }
 
     LaunchedEffect(selectedProduct) {
         selectedProduct?.let {
-            homeViewModel.getProductVariants(it.id)
+            viewModel.getProductVariants(it.id)
         }
     }
 
@@ -151,72 +152,16 @@ fun TabletHomeScreen(
             ),
             color = Color.Transparent
         )
-        Column(
+        TabletHomeSelectedProduct(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(WindowInsets.statusBars.asPaddingValues())
-        ) {
-            if (selectedProduct == null) {
-                Box(Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = LocalSpacing.current.paddingMedium.dp)) {
-                    Text(
-                        text = "Varian Produk",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.align(Alignment.TopStart)
-                    )
-                    Text(
-                        text = "Pilih produk terlebih dahulu",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-            } else {
-                productVariants.let { state ->
-                    when (state) {
-                        is UiState.Idle -> {}
-                        is UiState.Loading -> {}
-                        is UiState.Success<List<ProductVariant>> -> {
-                            selectedProduct?.let { product ->
-                                Column(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
-                                ) {
-                                    Text(
-                                        text = product.name,
-                                        style = MaterialTheme.typography.titleLarge,
-                                    )
-                                    Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
-                                    AppLazyColumn(
-                                        modifier = Modifier.weight(1f).fillMaxSize(),
-                                        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
-                                        contentPadding = PaddingValues(horizontal = LocalSpacing.current.paddingSmall.dp)
-                                    ) {
-                                        items(state.data, key = {it.id}) { variant ->
-                                            ProductVariantCard(
-                                                modifier = Modifier,
-                                                barcode = variant.barcode,
-                                                size = variant.size,
-                                                color = variant.color,
-                                                stock = variant.stock,
-                                                isChecked = false
-                                            ) { }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        is UiState.Error -> {
-                            Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
-        }
+                .padding(WindowInsets.statusBars.asPaddingValues()),
+            selectedProduct = selectedProduct,
+            productVariants = productVariants,
+            context = context
+        )
     }
 
     if (showRequestPermission) {
@@ -279,6 +224,80 @@ fun TabletHomeScreen(
                     ErrorDialog(
                         message = state.message
                     ) { scanResult = "" }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TabletHomeSelectedProduct(
+    modifier: Modifier = Modifier,
+    selectedProduct: Product?,
+    productVariants: UiState<List<ProductVariant>>,
+    context: Context
+) {
+    Column(
+        modifier = modifier
+    ) {
+        if (selectedProduct == null) {
+            Box(Modifier
+                .fillMaxSize()
+                .padding(horizontal = LocalSpacing.current.paddingMedium.dp)) {
+                Text(
+                    text = "Varian Produk",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.align(Alignment.TopStart)
+                )
+                Text(
+                    text = "Pilih produk terlebih dahulu",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSecondary,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        } else {
+            productVariants.let { state ->
+                when (state) {
+                    is UiState.Idle -> {}
+                    is UiState.Loading -> {}
+                    is UiState.Success<List<ProductVariant>> -> {
+                        selectedProduct.let { product ->
+                            Column(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
+                            ) {
+                                Text(
+                                    text = product.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                )
+                                Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
+                                AppLazyColumn(
+                                    modifier = Modifier.weight(1f).fillMaxSize(),
+                                    verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
+                                    contentPadding = PaddingValues(horizontal = LocalSpacing.current.paddingSmall.dp)
+                                ) {
+                                    items(state.data, key = {it.id}) { variant ->
+                                        ProductVariantCard(
+                                            modifier = Modifier
+                                                .offset(
+                                                    x = -LocalSpacing.current.paddingSmall.dp
+                                                ),
+                                            barcode = variant.barcode,
+                                            size = variant.size,
+                                            color = variant.color,
+                                            stock = variant.stock,
+                                            isChecked = false
+                                        ) { }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    is UiState.Error -> {
+                        Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }

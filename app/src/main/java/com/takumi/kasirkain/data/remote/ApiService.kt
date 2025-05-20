@@ -35,6 +35,11 @@ interface ApiService {
         @Path("barcode") barcode: String
     ): Response<BaseResponse<ProductDetailResponse>>
 
+    @GET("product-variants/{id}")
+    suspend fun getProductVariants(
+        @Path("id") id: Int
+    ): Response<BaseResponse<List<ProductVariantResponse>>>
+
     @GET("transactions")
     suspend fun getTransactions(): Response<BaseResponse<List<TransactionResponse>>>
 }

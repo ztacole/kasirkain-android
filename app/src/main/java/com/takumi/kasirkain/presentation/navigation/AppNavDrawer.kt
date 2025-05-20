@@ -54,6 +54,12 @@ fun AppNavDrawer(
             route = Screen.Home.route
         ),
         NavigationItem(
+            name = "Keranjang",
+            selectedIcon = R.drawable.ic_cart_filled,
+            unselectedIcon = R.drawable.ic_cart,
+            route = Screen.Cart.route
+        ),
+        NavigationItem(
             name = "Riwayat",
             selectedIcon = R.drawable.history_trx_filled,
             unselectedIcon = R.drawable.history_trx_outlined,

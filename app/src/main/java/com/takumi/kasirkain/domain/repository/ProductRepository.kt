@@ -7,4 +7,5 @@ import com.takumi.kasirkain.domain.model.ProductVariant
 interface ProductRepository {
     suspend fun getProduct(category: String?, search: String?): List<Product>
     suspend fun getProductVariantDetail(barcode: String) : ProductDetail
+    suspend fun getProductVariants(id: Int): List<ProductVariant>
 }

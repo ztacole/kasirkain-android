@@ -58,6 +58,15 @@ class RemoteDataSource @Inject constructor(
         }
     }
 
+    suspend fun getProductVariants(id: Int): List<ProductVariantResponse> {
+        val response = apiService.getProductVariants(id)
+        if (response.isSuccessful) {
+            return response.body()?.data ?: emptyList()
+        } else {
+            throw Exception("Gagal memuat varian produk: ${response.message()}")
+        }
+    }
+
     suspend fun getTransactions(): List<TransactionResponse> {
         val response = apiService.getTransactions()
         if (response.isSuccessful) {

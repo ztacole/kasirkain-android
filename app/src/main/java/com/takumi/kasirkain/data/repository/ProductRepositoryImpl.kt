@@ -25,4 +25,9 @@ class ProductRepositoryImpl @Inject constructor(
         val response = remoteDataSource.getProductVariantDetail(barcode)
         return response.toDomain()
     }
+
+    override suspend fun getProductVariants(id: Int): List<ProductVariant> {
+        val response = remoteDataSource.getProductVariants(id)
+        return response.map { it.toDomain() }
+    }
 }
