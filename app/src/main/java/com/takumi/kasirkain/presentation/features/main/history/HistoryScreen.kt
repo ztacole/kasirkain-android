@@ -111,7 +111,7 @@ fun LoadingTransaction() {
                 .clip(MaterialTheme.shapes.medium)
                 .shimmer()
         )
-        Spacer(Modifier.height(LocalSpacing.current.paddingSmall.dp))
+        Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
@@ -130,7 +130,7 @@ fun LoadingTransactionHeader() {
                 .clip(MaterialTheme.shapes.medium)
                 .shimmer()
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Spacer(
                 modifier = Modifier
@@ -139,7 +139,7 @@ fun LoadingTransactionHeader() {
                     .clip(MaterialTheme.shapes.medium)
                     .shimmer()
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(6.dp))
             Spacer(
                 modifier = Modifier
                     .width(120.dp)
@@ -147,7 +147,7 @@ fun LoadingTransactionHeader() {
                     .clip(MaterialTheme.shapes.medium)
                     .shimmer()
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(6.dp))
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,7 +156,7 @@ fun LoadingTransactionHeader() {
                     .shimmer()
             )
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(12.dp))
         Spacer(
             modifier = Modifier
                 .width(100.dp)

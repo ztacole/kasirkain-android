@@ -2,11 +2,13 @@ package com.takumi.kasirkain.presentation.features.main.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.takumi.kasirkain.data.local.mapper.toCartItem
 import com.takumi.kasirkain.domain.model.CartItem
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
 import com.takumi.kasirkain.domain.model.ProductDetail
 import com.takumi.kasirkain.domain.model.ProductVariant
+import com.takumi.kasirkain.domain.usecase.AddCartItemUseCase
 import com.takumi.kasirkain.domain.usecase.GetCartItemsUseCase
 import com.takumi.kasirkain.domain.usecase.GetCategoriesUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductUseCase
@@ -25,20 +27,18 @@ class HomeViewModel @Inject constructor(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val getProductVariantsUseCase: GetProductVariantsUseCase,
     private val getProductVariantByBarcodeUseCase: GetProductVariantByBarcodeUseCase,
-    private val getCartItemsUseCase: GetCartItemsUseCase
+    private val addCartItemUseCase: AddCartItemUseCase
 ): ViewModel() {
     private val _products: MutableStateFlow<UiState<List<Product>>> = MutableStateFlow(UiState.Idle)
     private val _categories: MutableStateFlow<UiState<List<Category>>> = MutableStateFlow(UiState.Idle)
     private val _productVariants: MutableStateFlow<UiState<List<ProductVariant>>> =
         MutableStateFlow(UiState.Idle)
     private val _productVariant: MutableStateFlow<UiState<ProductDetail>> = MutableStateFlow(UiState.Idle)
-    private val _cartItems: MutableStateFlow<List<CartItem>> = MutableStateFlow(emptyList())
 
     val products = _products.asStateFlow()
     val categories = _categories.asStateFlow()
     val productVariants = _productVariants.asStateFlow()
     val productVariant = _productVariant.asStateFlow()
-    val cartItems = _cartItems.asStateFlow()
 
     init {
         getCartItems()
@@ -102,6 +102,12 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 _productVariant.value = UiState.Error(e.message ?: "Unknown Error")
             }
+        }
+    }
+
+    fun addProductToCart(product: Product, productVariant: ProductVariant) {
+        viewModelScope.launch {
+            addCartItemUseCase(product.toCartItem(productVariant))
         }
     }
 }

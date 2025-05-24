@@ -47,7 +47,7 @@ import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.HomeScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthTabletScreen
-import com.takumi.kasirkain.presentation.features.cart.CartScreen
+import com.takumi.kasirkain.presentation.features.cart.CartTabletScreen
 import com.takumi.kasirkain.presentation.features.main.history.HistoryScreen
 import com.takumi.kasirkain.presentation.features.main.history.TabletHistoryScreen
 import com.takumi.kasirkain.presentation.features.main.home.HomeViewModel
@@ -201,7 +201,7 @@ fun AppNavigation(
                 composable(
                     Screen.Cart.route
                 ) {
-                    CartScreen()
+                    CartTabletScreen()
                 }
             }
 

@@ -88,7 +88,6 @@ fun TabletHomeScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val productVariants by viewModel.productVariants.collectAsStateWithLifecycle()
     val productVariant by viewModel.productVariant.collectAsStateWithLifecycle()
-    val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
 
     var showRequestPermission by remember { mutableStateOf(false) }
 
@@ -160,7 +159,13 @@ fun TabletHomeScreen(
                 .padding(WindowInsets.statusBars.asPaddingValues()),
             selectedProduct = selectedProduct,
             productVariants = productVariants,
-            context = context
+            context = context,
+            onAddToCart = {
+                viewModel.addProductToCart(
+                    product = selectedProduct!!,
+                    productVariant = it
+                )
+            }
         )
     }
 
@@ -235,7 +240,8 @@ fun TabletHomeSelectedProduct(
     modifier: Modifier = Modifier,
     selectedProduct: Product?,
     productVariants: UiState<List<ProductVariant>>,
-    context: Context
+    context: Context,
+    onAddToCart: (ProductVariant) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -275,8 +281,11 @@ fun TabletHomeSelectedProduct(
                                 Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
                                 AppLazyColumn(
                                     modifier = Modifier.weight(1f).fillMaxSize(),
-                                    verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
-                                    contentPadding = PaddingValues(horizontal = LocalSpacing.current.paddingSmall.dp)
+                                    verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
+                                    contentPadding = PaddingValues(
+                                        horizontal = LocalSpacing.current.paddingSmall.dp,
+                                        vertical = LocalSpacing.current.paddingLarge.dp
+                                    )
                                 ) {
                                     items(state.data, key = {it.id}) { variant ->
                                         ProductVariantCard(
@@ -288,8 +297,10 @@ fun TabletHomeSelectedProduct(
                                             size = variant.size,
                                             color = variant.color,
                                             stock = variant.stock,
-                                            isChecked = false
-                                        ) { }
+                                            onClick = {
+                                                onAddToCart(variant)
+                                            }
+                                        )
                                     }
                                 }
                             }

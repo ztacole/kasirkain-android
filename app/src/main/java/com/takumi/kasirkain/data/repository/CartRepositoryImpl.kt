@@ -18,12 +18,12 @@ class CartRepositoryImpl @Inject constructor(
         localDataSource.insertCartItem(item.toData())
     }
 
-    override suspend fun updateStockByVariantId(productVariantId: Int, stock: Int) {
-        localDataSource.updateStockByVariantId(productVariantId, stock)
+    override suspend fun updateCartItem(cartItem: CartItem) {
+        localDataSource.updateCartItem(cartItem.toData())
     }
 
-    override suspend fun deleteByVariantId(productVariantId: Int) {
-        localDataSource.deleteByVariantId(productVariantId)
+    override suspend fun deleteCartItem(cartItem: CartItem) {
+        localDataSource.deleteCartItem(cartItem.toData())
     }
 
     override suspend fun clearCart() {

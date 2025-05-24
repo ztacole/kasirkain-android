@@ -22,15 +22,15 @@ class LocalDataSource @Inject constructor(
     }
 
     suspend fun insertCartItem(item: CartEntity) {
-        db.cartDao().insertCartItem(item)
+        db.cartDao().insertOrUpdate(item)
     }
 
-    suspend fun updateStockByVariantId(productVariantId: Int, stock: Int) {
-        db.cartDao().updateStockByVariantId(productVariantId, stock)
+    suspend fun updateCartItem(item: CartEntity) {
+        db.cartDao().updateCartItem(item)
     }
 
-    suspend fun deleteByVariantId(productVariantId: Int) {
-        db.cartDao().deleteByVariantId(productVariantId)
+    suspend fun deleteCartItem(item: CartEntity) {
+        db.cartDao().deleteCartItem(item)
     }
 
     suspend fun clearCart() {
