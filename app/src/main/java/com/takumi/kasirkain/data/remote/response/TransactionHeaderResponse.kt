@@ -9,6 +9,8 @@ data class TransactionHeaderResponse(
     val id: Int,
     val user: UserResponse,
     val payment_type: String,
+    val cash_received: Int,
+    val change_returned: Int,
     val product_count: Int,
     val total: Int,
     val created_at: String
@@ -23,6 +25,8 @@ data class TransactionHeaderResponse(
             id = id,
             user = user.toDomain(),
             paymentType = payment_type,
+            cashReceived = cash_received,
+            changeReturned = change_returned,
             productCount = product_count,
             total = total,
             time = timeInString
