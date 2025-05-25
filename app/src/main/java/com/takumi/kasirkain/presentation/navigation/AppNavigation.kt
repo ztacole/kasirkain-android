@@ -48,10 +48,11 @@ import com.takumi.kasirkain.presentation.features.main.home.HomeScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthScreen
 import com.takumi.kasirkain.presentation.features.auth.login.AuthTabletScreen
 import com.takumi.kasirkain.presentation.features.cart.CartTabletScreen
+import com.takumi.kasirkain.presentation.features.checkout.CheckoutTabletScreen
 import com.takumi.kasirkain.presentation.features.main.history.HistoryScreen
-import com.takumi.kasirkain.presentation.features.main.history.TabletHistoryScreen
+import com.takumi.kasirkain.presentation.features.main.history.HistoryTabletScreen
 import com.takumi.kasirkain.presentation.features.main.home.HomeViewModel
-import com.takumi.kasirkain.presentation.features.main.home.TabletHomeScreen
+import com.takumi.kasirkain.presentation.features.main.home.HomeTabletScreen
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.features.splash.SplashViewModel
@@ -136,7 +137,7 @@ fun AppNavigation(
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection)
+            modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             NavHost(
                 navController = navController,
@@ -145,10 +146,10 @@ fun AppNavigation(
                     .fillMaxSize()
                     .padding(innerPadding),
                 enterTransition = {
-                    ScreenTransitions.slideTransition()
+                    ScreenTransitions.fadeTransition()
                 },
                 exitTransition = {
-                    ScreenTransitions.slideExitTransition()
+                    ScreenTransitions.fadeExitTransition()
                 }
             ) {
                 composable("splash") { }
@@ -176,33 +177,38 @@ fun AppNavigation(
                 }
                 composable(
                     Screen.Home.route,
-                    enterTransition = {
-                        if (previousRoute == Screen.History.route) EnterTransition.None
-                        else ScreenTransitions.slideTransition()
-                    },
-                    exitTransition = {
-                        if (currentRoute == Screen.History.route) ExitTransition.None
-                        else ScreenTransitions.slideExitTransition()
-                    }
+//                    enterTransition = {
+//                        if (previousRoute == Screen.History.route) EnterTransition.None
+//                        else ScreenTransitions.slideTransition()
+//                    },
+//                    exitTransition = {
+//                        if (currentRoute == Screen.History.route) ExitTransition.None
+//                        else ScreenTransitions.slideExitTransition()
+//                    }
                 ) {
                     previousRoute = Screen.Home.route
-                    if (deviceType == DeviceType.Tablet) TabletHomeScreen(scrollBehavior = scrollBehavior)
+                    if (deviceType == DeviceType.Tablet) HomeTabletScreen(scrollBehavior = scrollBehavior)
                     else HomeScreen()
                 }
                 composable(
                     Screen.History.route,
-                    enterTransition = { EnterTransition.None },
-                    exitTransition = { ExitTransition.None }
+//                    enterTransition = { EnterTransition.None },
+//                    exitTransition = { ExitTransition.None }
                 ) {
                     previousRoute = Screen.History.route
                     if (deviceType == DeviceType.Phone) HistoryScreen()
-                    else TabletHistoryScreen(scrollBehavior = scrollBehavior)
+                    else HistoryTabletScreen()
                 }
                 composable(
                     Screen.Cart.route
                 ) {
-                    CartTabletScreen()
+                    CartTabletScreen(
+                        onNavigateToCheckoutScreen = {
+                            navController.navigate(Screen.Checkout.route)
+                        }
+                    )
                 }
+                composable(Screen.Checkout.route) { CheckoutTabletScreen() }
             }
 
             if (showRequestPermission) {

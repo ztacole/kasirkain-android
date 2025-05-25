@@ -36,7 +36,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -77,7 +76,7 @@ import com.takumi.kasirkain.presentation.theme.LocalSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TabletHomeScreen(
+fun HomeTabletScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     scrollBehavior: TopAppBarScrollBehavior
@@ -151,7 +150,7 @@ fun TabletHomeScreen(
             ),
             color = Color.Transparent
         )
-        TabletHomeSelectedProduct(
+        TabletHomeSideSection(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
@@ -236,7 +235,7 @@ fun TabletHomeScreen(
 }
 
 @Composable
-fun TabletHomeSelectedProduct(
+fun TabletHomeSideSection(
     modifier: Modifier = Modifier,
     selectedProduct: Product?,
     productVariants: UiState<List<ProductVariant>>,
@@ -289,10 +288,7 @@ fun TabletHomeSelectedProduct(
                                 ) {
                                     items(state.data, key = {it.id}) { variant ->
                                         ProductVariantCard(
-                                            modifier = Modifier
-                                                .offset(
-                                                    x = -LocalSpacing.current.paddingSmall.dp
-                                                ),
+                                            modifier = Modifier,
                                             barcode = variant.barcode,
                                             size = variant.size,
                                             color = variant.color,

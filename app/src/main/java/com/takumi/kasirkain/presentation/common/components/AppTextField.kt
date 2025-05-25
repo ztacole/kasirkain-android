@@ -24,8 +24,7 @@ fun AppTextField(
     onValueChange: (String)-> Unit,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     readOnly: Boolean = false,
-    placeHolder: String? = null,
-    label: String? = null,
+    placeHolder: String,
     containerColor: Color = Color.White,
     leadingIcon: ImageVector? = null,
     trailingIcon: ImageVector? = null,
@@ -37,8 +36,7 @@ fun AppTextField(
         modifier = modifier.fillMaxWidth(),
         visualTransformation = visualTransformation,
         readOnly = readOnly,
-        placeholder = { Text(placeHolder ?: "") },
-        label = { Text(label ?: "") },
+        placeholder = { Text(placeHolder) },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = containerColor,
             unfocusedContainerColor = containerColor,
@@ -69,9 +67,10 @@ fun AppTextField(
 private fun Preview() {
     KasirKainTheme {
         AppTextField(
-            value = "Tes",
+            value = "",
             onValueChange = {},
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
+            placeHolder = "Username"
         )
     }
 }

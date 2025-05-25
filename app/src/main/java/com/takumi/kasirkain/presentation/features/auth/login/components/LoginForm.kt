@@ -30,7 +30,7 @@ fun LoginForm(
         onValueChange = onUsernameChange,
         modifier = Modifier.padding(horizontal = LocalSpacing.current.paddingMedium.dp),
         leadingIcon = Icons.Default.Person,
-        label = "Username"
+        placeHolder = "Username"
     )
     Spacer(Modifier.height(12.dp))
     AppTextField(
@@ -38,7 +38,7 @@ fun LoginForm(
         onValueChange = onPasswordChange,
         modifier = Modifier.padding(horizontal = LocalSpacing.current.paddingMedium.dp),
         leadingIcon = Icons.Default.Lock,
-        label = "Password",
+        placeHolder = "Password",
         visualTransformation = PasswordVisualTransformation()
     )
     Spacer(Modifier.height(24.dp))
