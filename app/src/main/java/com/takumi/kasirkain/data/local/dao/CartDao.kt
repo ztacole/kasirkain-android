@@ -1,7 +1,6 @@
 package com.takumi.kasirkain.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.IGNORE
 import androidx.room.Query
@@ -16,11 +15,11 @@ interface CartDao {
     @Insert(onConflict = IGNORE)
     suspend fun insertCartItem(item: CartEntity)
 
-    @Update
-    suspend fun updateCartItem(item: CartEntity)
+    @Query("UPDATE cart SET quantity = :quantity WHERE productVariantId = :productVariantId")
+    suspend fun updateQuantity(productVariantId: Int, quantity: Int)
 
-    @Delete
-    suspend fun deleteCartItem(item: CartEntity)
+    @Query("DELETE FROM cart WHERE productVariantId = :productVariantId")
+    suspend fun deleteCartItem(productVariantId: Int)
 
     @Query("DELETE FROM cart")
     suspend fun clearCart()
@@ -31,7 +30,7 @@ interface CartDao {
     suspend fun insertOrUpdate(item: CartEntity) {
         val existingItem = getItem(item.productId, item.productVariantId)
         if (existingItem != null && existingItem.quantity < existingItem.stock) {
-            updateCartItem(existingItem.copy(quantity = existingItem.quantity + item.quantity))
+            updateQuantity(item.productVariantId, existingItem.quantity + item.quantity)
         } else if (existingItem == null) {
             insertCartItem(item)
         }

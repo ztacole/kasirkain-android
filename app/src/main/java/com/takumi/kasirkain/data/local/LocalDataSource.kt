@@ -25,12 +25,12 @@ class LocalDataSource @Inject constructor(
         db.cartDao().insertOrUpdate(item)
     }
 
-    suspend fun updateCartItem(item: CartEntity) {
-        db.cartDao().updateCartItem(item)
+    suspend fun updateQuantity(productVariantId: Int, quantity: Int) {
+        db.cartDao().updateQuantity(productVariantId, quantity)
     }
 
     suspend fun deleteCartItem(item: CartEntity) {
-        db.cartDao().deleteCartItem(item)
+        db.cartDao().deleteCartItem(item.productVariantId)
     }
 
     suspend fun clearCart() {

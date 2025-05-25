@@ -19,7 +19,7 @@ class CartViewModel @Inject constructor(
     private val updateCartItemQuantityUseCase: UpdateCartItemQuantityUseCase,
     private val deleteCartItemUseCase: DeleteCartItemUseCase
 ): ViewModel() {
-    private val _cartItems: MutableStateFlow<UiState<List<CartItem>>> = MutableStateFlow(UiState.Idle)
+    private val _cartItems: MutableStateFlow<List<CartItem>> = MutableStateFlow(emptyList())
 
     val cartItems = _cartItems.asStateFlow()
 
@@ -28,9 +28,19 @@ class CartViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val result = getCartItemsUseCase()
-                _cartItems.value = UiState.Success(result)
+                _cartItems.value = result
             } catch (e: Exception) {
-                _cartItems.value = UiState.Error(e.message ?: "Unknow Error")
+                _cartItems.value = emptyList()
+            }
+        }
+    }
+
+    private fun updateItemInState(updatedItem: CartItem) {
+        _cartItems.value = _cartItems.value.let { data ->
+            data.map { item ->
+                if (item.id == updatedItem.id) updatedItem else item
+            }.filter { item ->
+                item.quantity > 0
             }
         }
     }
@@ -38,18 +48,22 @@ class CartViewModel @Inject constructor(
     fun increaseCartItemQuantity(item: CartItem) {
         viewModelScope.launch {
             if (item.quantity < item.stock) {
-                updateCartItemQuantityUseCase(item.copy(quantity = item.quantity + 1))
+                val updatedItem = item.copy(quantity = item.quantity + 1)
+                updateCartItemQuantityUseCase(updatedItem)
+                updateItemInState(updatedItem)
             }
         }
     }
 
     fun decreaseCartItemQuantity(item: CartItem) {
         viewModelScope.launch {
+            val updatedItem = item.copy(quantity = item.quantity - 1)
             if (item.quantity > 1) {
-                updateCartItemQuantityUseCase(item.copy(quantity = item.quantity - 1))
+                updateCartItemQuantityUseCase(updatedItem)
             } else {
                 deleteCartItemUseCase(item)
             }
+            updateItemInState(updatedItem)
         }
     }
 }
