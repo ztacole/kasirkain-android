@@ -48,14 +48,14 @@ class PrintReceiptUseCase @Inject constructor(
                     32   // Number of characters per line
                 )
 
-                // Print konten struk
+                // List item
                 val receiptText = if (transactionId == -1) {
                     generateReceiptTextFromCart(cartItems, paymentType, cashReceived, cashierProfile)
                 } else {
                     generateReceiptTextFromHistory(item, paymentType, cashReceived, cashierProfile)
                 }
 
-                // Print logo atau header
+                // Print logo
                 try {
                     val drawable = context.resources.getDrawableForDensity(
                         R.drawable.fashion24_logo,
@@ -88,7 +88,8 @@ class PrintReceiptUseCase @Inject constructor(
         cashierProfile: User
     ): String {
         val sb = StringBuilder()
-        val totalPrice = data.sumOf { it.productPrice * it.quantity }.toLong()
+        val totalPriceBeforeDiscount = data.sumOf { it.productPrice * it.quantity }.toLong()
+        val totalPrice = data.sumOf { it.productFinalPrice * it.quantity }.toLong()
         val timestamp = SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
         sb.append("[C]================================\n")
@@ -102,14 +103,16 @@ class PrintReceiptUseCase @Inject constructor(
                 color = item.productColor,
                 size = item.productSize,
                 price = item.productPrice,
+                discountPercentage = item.productDiscount,
+                finalPrice = item.productFinalPrice,
                 quantity = item.quantity
             ))
         }
 
         sb.append("[L]\n")
         sb.append("[C]--------------------------------\n")
-        sb.append("[L]<b>Total Item (${data.size}) :[R]${CoreFunction.rupiahFormatter(totalPrice)}</b>\n")
-        sb.append("[L]Total Disc :[R]${CoreFunction.rupiahFormatter(0)}\n")
+        sb.append("[L]<b>Total Item (${data.size}) :[R]${CoreFunction.rupiahFormatter(totalPriceBeforeDiscount)}</b>\n")
+        sb.append("[L]Total Disc :[R]${CoreFunction.rupiahFormatter(totalPriceBeforeDiscount - totalPrice)}\n")
         sb.append("[L]Total Harga :[R]${CoreFunction.rupiahFormatter(totalPrice)}\n")
         sb.append("[L]$paymentType :[R]${CoreFunction.rupiahFormatter(cashReceived)}\n")
         sb.append("[L]Kembalian :[R]${CoreFunction.rupiahFormatter(cashReceived - totalPrice)}\n")
@@ -129,6 +132,7 @@ class PrintReceiptUseCase @Inject constructor(
         cashierProfile: User
     ): String {
         val sb = StringBuilder()
+        val totalPriceBeforeDiscount = data.details.sumOf { it.product.price * it.quantity }.toLong()
         val totalPrice = data.details.sumOf { it.product.finalPrice * it.quantity }.toLong()
         val timestamp = SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
@@ -143,14 +147,16 @@ class PrintReceiptUseCase @Inject constructor(
                 color = item.product.variants[0].color,
                 size = item.product.variants[0].size,
                 price = item.product.finalPrice,
+                discountPercentage = item.product.discount,
+                finalPrice = item.product.finalPrice,
                 quantity = item.quantity
             ))
         }
 
         sb.append("[L]\n")
         sb.append("[C]--------------------------------\n")
-        sb.append("[L]<b>Total Item (${data.details.size}) :[R]${CoreFunction.rupiahFormatter(totalPrice)}</b>\n")
-        sb.append("[L]Total Disc :[R]${CoreFunction.rupiahFormatter(0)}\n")
+        sb.append("[L]<b>Total Item (${data.details.size}) :[R]${CoreFunction.rupiahFormatter(totalPriceBeforeDiscount)}</b>\n")
+        sb.append("[L]Total Disc :[R]${CoreFunction.rupiahFormatter(totalPriceBeforeDiscount - totalPrice)}\n")
         sb.append("[L]Total Harga :[R]${CoreFunction.rupiahFormatter(totalPrice)}\n")
         sb.append("[L]$paymentType :[R]${CoreFunction.rupiahFormatter(cashReceived)}\n")
         sb.append("[L]Kembalian :[R]${CoreFunction.rupiahFormatter(cashReceived - totalPrice)}\n")
@@ -168,17 +174,19 @@ class PrintReceiptUseCase @Inject constructor(
         color: String,
         size: String,
         price: Int,
+        discountPercentage: Int,
+        finalPrice: Int,
         quantity: Int
     ): String {
         val totalBefore = quantity * price
-        val discount = ((price * (10 / 100)) * quantity).toLong()
-        val totalAfter = totalBefore.toLong() - discount
+        val discount = (finalPrice - price).toLong()
+        val totalAfter = finalPrice * quantity
 
-        val line1 = "[L]<b>$quantity ${name.take(13)}</b> ${CoreFunction.currencyFormatter(price.toLong())}[R]${CoreFunction.currencyFormatter(totalBefore.toLong())}\n"
-        val line2 = "[L]   Size: $size | Warna: ${color.take(5)}\n"
-        val line3 = if (discount > 0) {
+        val line1 = "[L]<b>$quantity ${name.take(13).padEnd(13)}</b> ${CoreFunction.currencyFormatter(price.toLong()).padStart(7)}[R]${CoreFunction.currencyFormatter(totalBefore.toLong())}\n"
+        val line2 = "[L]   Size: $size | Warna: ${color.take(6)}\n"
+        val line3 = if (discountPercentage > 0) {
             "[L]   Diskon:[R]${CoreFunction.currencyFormatter(discount)}\n" +
-                    "[L]   Subtotal:[R]${CoreFunction.currencyFormatter(totalAfter)}\n"
+                    "[L]   Subtotal:[R]${CoreFunction.currencyFormatter(totalAfter.toLong())}\n"
         } else {
             ""
         }
