@@ -44,10 +44,6 @@ class HistoryViewModel @Inject constructor(
         getTransactions()
     }
 
-    fun resetPrintState() {
-        _printState.value = UiState.Idle
-    }
-
     private fun getTransactions() {
         _transactions.value = UiState.Loading
         viewModelScope.launch {
@@ -71,6 +67,10 @@ class HistoryViewModel @Inject constructor(
                 _transactionDetail.value = UiState.Error(e.message ?: "Unknown Error")
             }
         }
+    }
+
+    fun resetPrintState() {
+        _printState.value = UiState.Idle
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)

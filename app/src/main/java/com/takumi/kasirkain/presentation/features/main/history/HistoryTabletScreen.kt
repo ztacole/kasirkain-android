@@ -142,6 +142,7 @@ fun HistoryTabletScreen(
                                 modifier = Modifier,
                                 date = transaction.date,
                                 transactions = transaction.transactions,
+                                selectedTransactionId = selectedTransactionId,
                                 onSelected = {
                                     if (it != selectedTransactionId) {
                                         selectedTransactionId = it

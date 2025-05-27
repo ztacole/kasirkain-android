@@ -70,6 +70,7 @@ fun HistoryScreen(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             date = transaction.date,
                             transactions = transaction.transactions,
+                            selectedTransactionId = 0,
                             onSelected = {}
                         )
                     }

@@ -33,7 +33,10 @@ fun TransactionHeaderCard(
     Row(
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 24.dp)
+        ) {
             Icon(
                 painter = painterResource(
                     if (paymentType == "QRIS") R.drawable.ic_qris

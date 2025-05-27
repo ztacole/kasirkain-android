@@ -1,5 +1,6 @@
 package com.takumi.kasirkain.presentation.features.main.history.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ fun TransactionCard(
     modifier: Modifier = Modifier,
     date: String,
     transactions: List<Transaction>,
+    selectedTransactionId: Int,
     onSelected: (Int) -> Unit
 ) {
     Column(modifier.fillMaxWidth()) {
@@ -37,6 +39,10 @@ fun TransactionCard(
             transactions.map { data ->
                 TransactionHeaderCard(
                     modifier = Modifier
+                        .background(
+                            if (selectedTransactionId != data.id) MaterialTheme.colorScheme.secondary
+                            else MaterialTheme.colorScheme.tertiary
+                        )
                         .clickable {
                             onSelected(data.id)
                         },
