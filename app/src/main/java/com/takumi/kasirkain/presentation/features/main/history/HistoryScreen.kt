@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.takumi.kasirkain.domain.model.Transaction
+import com.takumi.kasirkain.domain.model.GroupedTransaction
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.history.components.TransactionCard
@@ -64,12 +64,13 @@ fun HistoryScreen(
                 is UiState.Loading -> {
                     items(2) { LoadingTransaction() }
                 }
-                is UiState.Success<List<Transaction>> -> {
+                is UiState.Success<List<GroupedTransaction>> -> {
                     items(state.data) { transaction ->
                         TransactionCard(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             date = transaction.date,
-                            transactionHeaders = transaction.transactions
+                            transactions = transaction.transactions,
+                            onSelected = {}
                         )
                     }
                 }

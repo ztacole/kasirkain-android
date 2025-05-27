@@ -6,7 +6,7 @@ data class TransactionHeader(
     val paymentType: String,
     val cashReceived: Int,
     val changeReturned: Int,
-    val productCount: Int,
     val total: Int,
-    val time: String
+    val details: List<TransactionDetail>,
+    val createdAt: String
 )

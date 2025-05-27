@@ -1,5 +1,6 @@
 package com.takumi.kasirkain.data.remote.response
 
+import com.takumi.kasirkain.domain.model.Transaction
 import com.takumi.kasirkain.domain.model.TransactionHeader
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -11,13 +12,14 @@ data class TransactionHeaderResponse(
     val payment_type: String,
     val cash_received: Int,
     val change_returned: Int,
-    val product_count: Int,
     val total: Int,
+    val details: List<TransactionDetailResponse>,
     val created_at: String
 ) {
     fun toDomain(): TransactionHeader {
-        val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val localeId = Locale("in", "ID")
+        val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", localeId)
+        val timeFormatter = SimpleDateFormat("dd MMM yyyy HH:mm:ss", localeId)
         timeFormatter.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
         val time = dateFormatter.parse(created_at)
         val timeInString = timeFormatter.format(time!!)
@@ -27,9 +29,9 @@ data class TransactionHeaderResponse(
             paymentType = payment_type,
             cashReceived = cash_received,
             changeReturned = change_returned,
-            productCount = product_count,
             total = total,
-            time = timeInString
+            details = details.map { it.toDomain() },
+            createdAt = timeInString
         )
     }
 }

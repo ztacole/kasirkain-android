@@ -1,19 +1,17 @@
 package com.takumi.kasirkain.data.remote
 
 import android.util.Log
-import androidx.core.app.NotificationCompat.MessagingStyle.Message
 import com.google.gson.Gson
+import com.takumi.kasirkain.data.remote.request.CheckoutRequest
 import com.takumi.kasirkain.data.remote.request.LoginRequest
-import com.takumi.kasirkain.data.remote.response.BaseResponse
 import com.takumi.kasirkain.data.remote.response.CategoryResponse
 import com.takumi.kasirkain.data.remote.response.ErrorResponse
 import com.takumi.kasirkain.data.remote.response.ProductDetailResponse
 import com.takumi.kasirkain.data.remote.response.ProductResponse
 import com.takumi.kasirkain.data.remote.response.ProductVariantResponse
-import com.takumi.kasirkain.data.remote.response.TransactionResponse
-import com.takumi.kasirkain.domain.model.Product
-import com.takumi.kasirkain.domain.model.Transaction
-import retrofit2.Response
+import com.takumi.kasirkain.data.remote.response.GroupedTransactionResponse
+import com.takumi.kasirkain.data.remote.response.TransactionHeaderResponse
+import com.takumi.kasirkain.data.remote.response.UserResponse
 import javax.inject.Inject
 
 class RemoteDataSource @Inject constructor(
@@ -67,12 +65,41 @@ class RemoteDataSource @Inject constructor(
         }
     }
 
-    suspend fun getTransactions(): List<TransactionResponse> {
+    suspend fun getTransactions(): List<GroupedTransactionResponse> {
         val response = apiService.getTransactions()
         if (response.isSuccessful) {
             return response.body()?.data ?: throw Exception("Data Kosong")
         } else {
             throw Exception("Gagal memuat transaksi: ${response.message()}")
+        }
+    }
+
+    suspend fun getTransactionById(id: Int) : TransactionHeaderResponse {
+        val response = apiService.getTransactionById(id)
+        if (response.isSuccessful) {
+            return response.body()?.data ?: throw Exception("null")
+        } else {
+            throw Exception("Gagal memuat transaksi: ${response.message()}")
+        }
+    }
+
+    suspend fun profile(): UserResponse {
+        val response = apiService.profile()
+        if (response.isSuccessful) {
+            return response.body()?.data ?: throw Exception("null")
+        } else {
+            throw Exception("Gagal memuat profile: ${response.message()}")
+        }
+    }
+
+    suspend fun checkout(checkoutRequest: CheckoutRequest): TransactionHeaderResponse {
+        val response = apiService.checkout(checkoutRequest)
+        if (response.isSuccessful) {
+            return response.body()?.data ?: throw Exception("Terjadi kesalahan")
+        } else {
+            val responseBody = response.errorBody()?.string()
+            val message = errorHandling(responseBody)
+            throw Exception("Gagal melakukan pembayaran: $message")
         }
     }
 

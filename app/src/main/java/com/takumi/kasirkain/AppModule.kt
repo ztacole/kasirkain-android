@@ -22,6 +22,7 @@ import com.takumi.kasirkain.domain.repository.ProductRepository
 import com.takumi.kasirkain.domain.repository.TokenRepository
 import com.takumi.kasirkain.domain.repository.TransactionRepository
 import com.takumi.kasirkain.domain.usecase.GetProductUseCase
+import com.takumi.kasirkain.presentation.util.PrinterManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,13 +40,13 @@ object AppModule {
 
     @Provides
     // Local
-    fun provideBaseUrl(): String = "http://10.0.2.2:8000/api/"
+//    fun provideBaseUrl(): String = "http://10.0.2.2:8000/api/"
     // TP-LINK_2699
 //    fun provideBaseUrl(): String = "http://192.168.1.137:8000/api/"
     // Home
 //    fun provideBaseUrl(): String = "http://192.168.1.8:8000/api/"
     // TP-LINK_222B
-//    fun provideBaseUrl(): String = "http://192.168.1.105:8000/api/"
+    fun provideBaseUrl(): String = "http://192.168.0.149:8000/api/"
 
     @Provides
     @Singleton
@@ -140,4 +141,10 @@ object AppModule {
     fun provideCartRepository(
         local: LocalDataSource
     ): CartRepository = CartRepositoryImpl(local)
+
+    @Provides
+    @Singleton
+    fun providePrinterManager(
+        @ApplicationContext context: Context
+    ): PrinterManager = PrinterManager(context)
 }

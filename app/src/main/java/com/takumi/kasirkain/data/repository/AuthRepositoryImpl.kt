@@ -4,6 +4,7 @@ import com.takumi.kasirkain.data.local.LocalDataSource
 import com.takumi.kasirkain.data.remote.ApiService
 import com.takumi.kasirkain.data.remote.RemoteDataSource
 import com.takumi.kasirkain.data.remote.request.LoginRequest
+import com.takumi.kasirkain.domain.model.User
 import com.takumi.kasirkain.domain.repository.AuthRepository
 import javax.inject.Inject
 
@@ -15,5 +16,10 @@ class AuthRepositoryImpl @Inject constructor(
         val token =  remote.login(username, password)
         local.saveToken(token)
         return token
+    }
+
+    override suspend fun profile(): User {
+        val response = remote.profile()
+        return response.toDomain()
     }
 }

@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.takumi.kasirkain.R
 import com.takumi.kasirkain.presentation.common.state.UiState
-import com.takumi.kasirkain.presentation.common.components.ErrorDialog
+import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.features.auth.login.components.LoginForm
 import com.takumi.kasirkain.presentation.theme.KasirKainTheme
@@ -76,7 +76,7 @@ fun AuthScreen(
     }
 
     if (showErrorDialog) {
-        ErrorDialog(message = errorMessage) { showErrorDialog = false }
+        AppDialog(message = errorMessage) { showErrorDialog = false }
     }
 
     Box(

@@ -2,8 +2,6 @@ package com.takumi.kasirkain.presentation.navigation
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -41,7 +38,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import com.takumi.kasirkain.presentation.common.components.ErrorDialog
+import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.HomeScreen
@@ -177,14 +174,6 @@ fun AppNavigation(
                 }
                 composable(
                     Screen.Home.route,
-//                    enterTransition = {
-//                        if (previousRoute == Screen.History.route) EnterTransition.None
-//                        else ScreenTransitions.slideTransition()
-//                    },
-//                    exitTransition = {
-//                        if (currentRoute == Screen.History.route) ExitTransition.None
-//                        else ScreenTransitions.slideExitTransition()
-//                    }
                 ) {
                     previousRoute = Screen.Home.route
                     if (deviceType == DeviceType.Tablet) HomeTabletScreen(scrollBehavior = scrollBehavior)
@@ -192,11 +181,9 @@ fun AppNavigation(
                 }
                 composable(
                     Screen.History.route,
-//                    enterTransition = { EnterTransition.None },
-//                    exitTransition = { ExitTransition.None }
                 ) {
                     previousRoute = Screen.History.route
-                    if (deviceType == DeviceType.Phone) HistoryScreen()
+                    if (deviceType == DeviceType.Phone) HistoryTabletScreen()
                     else HistoryTabletScreen()
                 }
                 composable(
@@ -204,11 +191,24 @@ fun AppNavigation(
                 ) {
                     CartTabletScreen(
                         onNavigateToCheckoutScreen = {
-                            navController.navigate(Screen.Checkout.route)
+                            navController.navigate(Screen.Checkout.route) {
+                                popUpTo(Screen.Home.route)
+                            }
                         }
                     )
                 }
-                composable(Screen.Checkout.route) { CheckoutTabletScreen() }
+                composable(Screen.Checkout.route) {
+                    CheckoutTabletScreen(
+                        onNavigateBack = {
+                            navController.navigateUp()
+                        },
+                        onCheckout = {
+                            navController.navigate(Screen.History.route) {
+                                popUpTo(Screen.Checkout.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
             }
 
             if (showRequestPermission) {
@@ -238,7 +238,7 @@ fun AppNavigation(
             }
 
             if (showDeniedDialog) {
-                ErrorDialog(
+                AppDialog(
                     message = "Izin kamera diperlukan!"
                 ) {
                     showRequestPermission = false
@@ -268,7 +268,7 @@ fun AppNavigation(
                         }
 
                         is UiState.Error -> {
-                            ErrorDialog(
+                            AppDialog(
                                 message = state.message
                             ) { scanResult = "" }
                         }

@@ -7,7 +7,7 @@ import com.takumi.kasirkain.data.local.dao.TokenDao
 import com.takumi.kasirkain.data.local.entity.CartEntity
 import com.takumi.kasirkain.data.local.entity.TokenEntity
 
-@Database(entities = [TokenEntity::class, CartEntity::class], version = 2)
+@Database(entities = [TokenEntity::class, CartEntity::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun tokenDao(): TokenDao
     abstract fun cartDao(): CartDao

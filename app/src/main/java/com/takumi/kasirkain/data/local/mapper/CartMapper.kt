@@ -16,6 +16,8 @@ fun Product.toCartItem(
         productImage = image,
         productPrice = price,
         productVariantId = productVariant.id,
+        productSize = productVariant.size,
+        productColor = productVariant.color,
         barcode = productVariant.barcode,
         stock = productVariant.stock,
         quantity = quantity
@@ -30,6 +32,8 @@ fun CartEntity.toDomain(): CartItem {
         productImage = productImage,
         productPrice = productPrice,
         productVariantId = productVariantId,
+        productSize = productSize,
+        productColor = productColor,
         barcode = barcode,
         stock = stock,
         quantity = quantity
@@ -43,6 +47,8 @@ fun CartItem.toData(): CartEntity {
         productImage = productImage,
         productPrice = productPrice,
         productVariantId = productVariantId,
+        productSize = productSize,
+        productColor = productColor,
         barcode = barcode,
         stock = stock,
         quantity = quantity

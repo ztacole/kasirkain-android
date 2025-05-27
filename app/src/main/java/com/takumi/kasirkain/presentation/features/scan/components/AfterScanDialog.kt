@@ -28,7 +28,7 @@ fun AfterScanDialog(
                     |Ukuran: ${productVariant.size}
                     |Warna: ${productVariant.color}
                     |Stok: ${productVariant.stock}
-                    |Harga: ${CoreFunction.formatToRupiah(product.price)}""".trimMargin()
+                    |Harga: ${CoreFunction.rupiahFormatter(product.price.toLong())}""".trimMargin()
             )
         },
         confirmButton = {

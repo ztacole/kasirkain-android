@@ -1,5 +1,6 @@
 package com.takumi.kasirkain.data.remote
 
+import com.takumi.kasirkain.data.remote.request.CheckoutRequest
 import com.takumi.kasirkain.data.remote.request.LoginRequest
 import com.takumi.kasirkain.data.remote.response.BaseResponse
 import com.takumi.kasirkain.data.remote.response.CategoryResponse
@@ -7,7 +8,10 @@ import com.takumi.kasirkain.data.remote.response.LoginResponse
 import com.takumi.kasirkain.data.remote.response.ProductDetailResponse
 import com.takumi.kasirkain.data.remote.response.ProductResponse
 import com.takumi.kasirkain.data.remote.response.ProductVariantResponse
-import com.takumi.kasirkain.data.remote.response.TransactionResponse
+import com.takumi.kasirkain.data.remote.response.GroupedTransactionResponse
+import com.takumi.kasirkain.data.remote.response.TransactionHeaderResponse
+import com.takumi.kasirkain.data.remote.response.UserResponse
+import com.takumi.kasirkain.domain.model.TransactionHeader
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -41,5 +45,18 @@ interface ApiService {
     ): Response<BaseResponse<List<ProductVariantResponse>>>
 
     @GET("transactions")
-    suspend fun getTransactions(): Response<BaseResponse<List<TransactionResponse>>>
+    suspend fun getTransactions(): Response<BaseResponse<List<GroupedTransactionResponse>>>
+
+    @GET("transaction/{id}")
+    suspend fun getTransactionById(
+        @Path("id") id: Int
+    ): Response<BaseResponse<TransactionHeaderResponse>>
+
+    @POST("checkout")
+    suspend fun checkout(
+        @Body request: CheckoutRequest
+    ): Response<BaseResponse<TransactionHeaderResponse>>
+
+    @GET("profile")
+    suspend fun profile() : Response<BaseResponse<UserResponse>>
 }

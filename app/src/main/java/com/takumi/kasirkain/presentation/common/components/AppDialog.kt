@@ -7,8 +7,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun ErrorDialog(
+fun AppDialog(
     modifier: Modifier = Modifier,
+    title: String = "Terjadi Kesalahan!",
     message: String,
     onDismiss: ()-> Unit
 ) {
@@ -22,7 +23,7 @@ fun ErrorDialog(
                 onClick = onDismiss
             )
         },
-        title = {  Text(text = "Terjadi Kesalahan!") },
+        title = {  Text(text = title) },
         text = { Text(text = message) }
     )
 }

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -60,7 +59,7 @@ import com.takumi.kasirkain.domain.model.ProductVariant
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppLazyRow
 import com.takumi.kasirkain.presentation.common.components.AppLazyVerticalGrid
-import com.takumi.kasirkain.presentation.common.components.ErrorDialog
+import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.main.home.components.CategoryCard
@@ -114,12 +113,6 @@ fun HomeTabletScreen(
         viewModel.getProduct(selectedCategory.toString(), query)
     }
 
-    LaunchedEffect(selectedProduct) {
-        selectedProduct?.let {
-            viewModel.getProductVariants(it.id)
-        }
-    }
-
     Row(
         modifier.fillMaxSize()
     ) {
@@ -139,7 +132,12 @@ fun HomeTabletScreen(
                 scrollBehavior = scrollBehavior,
                 products = products,
                 context = context,
-                onProductClick = { selectedProduct = it }
+                onProductClick = {
+                    selectedProduct = it
+                    selectedProduct?.let {
+                        viewModel.getProductVariants(it.id)
+                    }
+                }
             )
         }
         VerticalDivider(
@@ -195,7 +193,7 @@ fun HomeTabletScreen(
     }
 
     if (showDeniedDialog) {
-        ErrorDialog(
+        AppDialog(
             message = "Izin kamera diperlukan!"
         ) {
             showRequestPermission = false
@@ -225,7 +223,7 @@ fun HomeTabletScreen(
                 }
 
                 is UiState.Error -> {
-                    ErrorDialog(
+                    AppDialog(
                         message = state.message
                     ) { scanResult = "" }
                 }

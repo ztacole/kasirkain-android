@@ -1,10 +1,9 @@
 package com.takumi.kasirkain.presentation.features.cart
 
-import android.widget.Space
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,8 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,21 +28,18 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.takumi.kasirkain.domain.model.CartItem
+import com.takumi.kasirkain.presentation.common.components.AppButton
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
-import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.cart.components.CartItemCard
 import com.takumi.kasirkain.presentation.theme.Black
 import com.takumi.kasirkain.presentation.theme.LocalSpacing
@@ -60,6 +54,8 @@ fun CartTabletScreen(
 ) {
     val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         viewModel.getCartItems()
     }
@@ -68,7 +64,9 @@ fun CartTabletScreen(
         modifier = modifier.fillMaxSize()
     ) {
         AppLazyColumn(
-            modifier = Modifier.weight(2f).fillMaxSize(),
+            modifier = Modifier
+                .weight(2f)
+                .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
             contentPadding = PaddingValues(LocalSpacing.current.paddingSmall.dp)
         ) {
@@ -156,49 +154,35 @@ fun CartTabletScreen(
                             )
                         }
                         Text(
-                            text = CoreFunction.formatToRupiah(item.quantity * item.productPrice),
+                            text = CoreFunction.rupiahFormatter((item.quantity * item.productPrice).toLong()),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
             }
             Column(
-                modifier = Modifier.fillMaxWidth().zIndex(5f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .zIndex(5f),
                 verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
             ) {
                 Text(
-                    text = "Total: ${CoreFunction.formatToRupiah(cartItems.sumOf { it.quantity * it.productPrice })}",
+                    text = "Total: ${CoreFunction.rupiahFormatter(cartItems.sumOf { it.quantity * it.productPrice }.toLong())}",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.align(Alignment.Start)
                 )
-                FloatingActionButton(
+                AppButton(
+                    text = "Proses Transaksi",
+                    shape = CircleShape,
+                    enabled = cartItems.isNotEmpty(),
                     onClick = {
                         onNavigateToCheckoutScreen()
                     },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = LocalSpacing.current.paddingMedium.dp),
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(LocalSpacing.current.paddingMedium.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Proses Transaksi",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
-                            contentDescription = null
-                        )
-                    }
-                }
+                        .padding(bottom = LocalSpacing.current.paddingMedium.dp)
+
+                )
             }
         }
     }
