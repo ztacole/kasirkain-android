@@ -11,7 +11,6 @@ import com.takumi.kasirkain.data.remote.response.ProductVariantResponse
 import com.takumi.kasirkain.data.remote.response.GroupedTransactionResponse
 import com.takumi.kasirkain.data.remote.response.TransactionHeaderResponse
 import com.takumi.kasirkain.data.remote.response.UserResponse
-import com.takumi.kasirkain.domain.model.TransactionHeader
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

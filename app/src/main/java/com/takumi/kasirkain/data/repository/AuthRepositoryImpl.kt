@@ -1,9 +1,7 @@
 package com.takumi.kasirkain.data.repository
 
 import com.takumi.kasirkain.data.local.LocalDataSource
-import com.takumi.kasirkain.data.remote.ApiService
 import com.takumi.kasirkain.data.remote.RemoteDataSource
-import com.takumi.kasirkain.data.remote.request.LoginRequest
 import com.takumi.kasirkain.domain.model.User
 import com.takumi.kasirkain.domain.repository.AuthRepository
 import javax.inject.Inject
