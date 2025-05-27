@@ -14,7 +14,7 @@ fun Product.toCartItem(
         productId = id,
         productName = name,
         productImage = image,
-        productPrice = price,
+        productPrice = finalPrice,
         productVariantId = productVariant.id,
         productSize = productVariant.size,
         productColor = productVariant.color,

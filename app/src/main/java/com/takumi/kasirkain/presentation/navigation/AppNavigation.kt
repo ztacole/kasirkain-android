@@ -175,8 +175,14 @@ fun AppNavigation(
                     Screen.Home.route,
                 ) {
                     previousRoute = Screen.Home.route
-                    if (deviceType == DeviceType.Tablet) HomeTabletScreen(scrollBehavior = scrollBehavior)
-                    else HomeScreen()
+                    HomeTabletScreen(
+                        onNavigateToCart = {
+                            navController.navigate(Screen.Cart.route)
+                        },
+                        scrollBehavior = scrollBehavior
+                    )
+//                    if (deviceType == DeviceType.Tablet) HomeTabletScreen(scrollBehavior = scrollBehavior)
+//                    else HomeScreen()
                 }
                 composable(
                     Screen.History.route,
@@ -307,7 +313,7 @@ fun getTitleForRoute(route: String?): String {
     return when (route) {
         Screen.Home.route -> "Beranda"
         Screen.History.route -> "Riwayat"
-        Screen.Auth.route -> "Login"
+        Screen.Cart.route -> "Keranjang"
         else -> "KasirKain"
     }
 }

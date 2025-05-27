@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -56,6 +57,8 @@ import com.takumi.kasirkain.R
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
 import com.takumi.kasirkain.domain.model.ProductVariant
+import com.takumi.kasirkain.domain.model.User
+import com.takumi.kasirkain.presentation.common.components.AppButton
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppLazyRow
 import com.takumi.kasirkain.presentation.common.components.AppLazyVerticalGrid
@@ -78,6 +81,7 @@ import com.takumi.kasirkain.presentation.theme.LocalSpacing
 fun HomeTabletScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
+    onNavigateToCart: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     val context = LocalContext.current
@@ -86,6 +90,7 @@ fun HomeTabletScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val productVariants by viewModel.productVariants.collectAsStateWithLifecycle()
     val productVariant by viewModel.productVariant.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     var showRequestPermission by remember { mutableStateOf(false) }
 
@@ -102,6 +107,7 @@ fun HomeTabletScreen(
 
     LaunchedEffect(Unit) {
         viewModel.getCategories()
+        viewModel.getUserProfile()
     }
 
     LaunchedEffect(selectedCategory) {
@@ -123,6 +129,7 @@ fun HomeTabletScreen(
                 query = query,
                 onQueryChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
+                userProfile = userProfile,
                 categories = categories,
                 onSelectedCategory = { selectedCategory = it },
                 selectedCategory = selectedCategory,
@@ -162,7 +169,8 @@ fun HomeTabletScreen(
                     product = selectedProduct!!,
                     productVariant = it
                 )
-            }
+            },
+            onNavigateToCart = onNavigateToCart
         )
     }
 
@@ -238,7 +246,8 @@ fun TabletHomeSideSection(
     selectedProduct: Product?,
     productVariants: UiState<List<ProductVariant>>,
     context: Context,
-    onAddToCart: (ProductVariant) -> Unit
+    onAddToCart: (ProductVariant) -> Unit,
+    onNavigateToCart: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -297,6 +306,14 @@ fun TabletHomeSideSection(
                                         )
                                     }
                                 }
+                                AppButton(
+                                    text = "Buka Keranjang",
+                                    onClick = onNavigateToCart,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = LocalSpacing.current.paddingMedium.dp),
+                                    shape = CircleShape
+                                )
                             }
                         }
                     }
@@ -315,6 +332,7 @@ fun TabletHomeHeaderSection(
     modifier: Modifier = Modifier,
     query: String,
     onQueryChange: (String) -> Unit,
+    userProfile: User?,
     categories: UiState<List<Category>>,
     selectedCategory: Int,
     onSelectedCategory: (Int) -> Unit,
@@ -332,10 +350,12 @@ fun TabletHomeHeaderSection(
         Column(
             modifier = Modifier.padding(horizontal = LocalSpacing.current.paddingMedium.dp)
         ) {
-            Text(
-                text = "Hi, Cashier",
-                style = MaterialTheme.typography.titleLarge,
-            )
+            userProfile?.let {
+                Text(
+                    text = "Halo, ${it.username}",
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            }
             Text(
                 text = "17:00 WIB",
                 style = MaterialTheme.typography.bodyLarge
@@ -444,7 +464,7 @@ fun TabletHomeContentSection(
                                     onProductClick(product)
                                 },
                             name = product.name,
-                            price = product.price,
+                            price = product.finalPrice,
                             variantCount = product.variantCount,
                             imageName = product.image
                         )

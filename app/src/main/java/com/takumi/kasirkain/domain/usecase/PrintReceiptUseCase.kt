@@ -1,11 +1,8 @@
 package com.takumi.kasirkain.domain.usecase
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.util.DisplayMetrics
-import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.dantsu.escposprinter.EscPosPrinter
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
@@ -132,7 +129,7 @@ class PrintReceiptUseCase @Inject constructor(
         cashierProfile: User
     ): String {
         val sb = StringBuilder()
-        val totalPrice = data.details.sumOf { it.product.price * it.quantity }.toLong()
+        val totalPrice = data.details.sumOf { it.product.finalPrice * it.quantity }.toLong()
         val timestamp = SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
         sb.append("[C]================================\n")
@@ -145,7 +142,7 @@ class PrintReceiptUseCase @Inject constructor(
                 name = item.product.name,
                 color = item.product.variants[0].color,
                 size = item.product.variants[0].size,
-                price = item.product.price,
+                price = item.product.finalPrice,
                 quantity = item.quantity
             ))
         }

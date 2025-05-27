@@ -106,7 +106,7 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
                             name = product.name,
-                            price = product.price,
+                            price = product.finalPrice,
                             variantCount = product.variantCount,
                             imageName = product.image
                         )

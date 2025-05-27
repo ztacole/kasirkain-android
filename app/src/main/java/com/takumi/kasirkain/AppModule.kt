@@ -21,12 +21,20 @@ import com.takumi.kasirkain.domain.repository.CategoryRepository
 import com.takumi.kasirkain.domain.repository.ProductRepository
 import com.takumi.kasirkain.domain.repository.TokenRepository
 import com.takumi.kasirkain.domain.repository.TransactionRepository
+import com.takumi.kasirkain.domain.usecase.AddCartItemUseCase
+import com.takumi.kasirkain.domain.usecase.GetCategoriesUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductUseCase
+import com.takumi.kasirkain.domain.usecase.GetProductVariantByBarcodeUseCase
+import com.takumi.kasirkain.domain.usecase.GetProductVariantsUseCase
+import com.takumi.kasirkain.domain.usecase.GetUserProfileUseCase
+import com.takumi.kasirkain.presentation.features.home.HomeViewModel
 import com.takumi.kasirkain.presentation.util.PrinterManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ActivityComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.scopes.ActivityScoped
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -147,4 +155,26 @@ object AppModule {
     fun providePrinterManager(
         @ApplicationContext context: Context
     ): PrinterManager = PrinterManager(context)
+}
+
+@Module
+@InstallIn(ActivityComponent::class)
+object ViewModelModule {
+    @Provides
+    @ActivityScoped
+    fun provideYourViewModel(
+        getProductUseCase: GetProductUseCase,
+        getCategoriesUseCase: GetCategoriesUseCase,
+        getProductVariantsUseCase: GetProductVariantsUseCase,
+        getProductVariantByBarcodeUseCase: GetProductVariantByBarcodeUseCase,
+        addCartItemUseCase: AddCartItemUseCase,
+        getUserProfileUseCase: GetUserProfileUseCase
+    ): HomeViewModel = HomeViewModel(
+        getProductUseCase,
+        getCategoriesUseCase,
+        getProductVariantsUseCase,
+        getProductVariantByBarcodeUseCase,
+        addCartItemUseCase,
+        getUserProfileUseCase
+    )
 }

@@ -364,12 +364,12 @@ fun ReceiptPreview(
                                 }
                             }
                             Text(
-                                text = CoreFunction.currencyFormatter(detail.product.price.toLong()),
+                                text = CoreFunction.currencyFormatter(detail.product.finalPrice.toLong()),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    text = CoreFunction.currencyFormatter((detail.product.price * detail.quantity).toLong()),
+                                    text = CoreFunction.currencyFormatter((detail.product.finalPrice * detail.quantity).toLong()),
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.fillMaxWidth(),
                                     textAlign = TextAlign.End
@@ -392,12 +392,12 @@ fun ReceiptPreview(
                     HorizontalDivider()
                     TotalSection(
                         text = "Total Item (${state.data.details.count()}) : ",
-                        number = state.data.details.sumOf { it.product.price * it.quantity }.toLong()
+                        number = state.data.details.sumOf { it.product.finalPrice * it.quantity }.toLong()
                     )
                     TotalSection("Total Disc : ", 0)
                     TotalSection(
                         text = "Total Harga : ",
-                        number = state.data.details.sumOf { it.product.price * it.quantity }.toLong()
+                        number = state.data.details.sumOf { it.product.finalPrice * it.quantity }.toLong()
                     )
                     TotalSection(
                         text = "${state.data.paymentType} : ",
