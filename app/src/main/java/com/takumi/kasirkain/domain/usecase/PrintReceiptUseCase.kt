@@ -51,10 +51,17 @@ class PrintReceiptUseCase @Inject constructor(
                     32   // Number of characters per line
                 )
 
+                // Print konten struk
+                val receiptText = if (transactionId == -1) {
+                    generateReceiptTextFromCart(cartItems, paymentType, cashReceived, cashierProfile)
+                } else {
+                    generateReceiptTextFromHistory(item, paymentType, cashReceived, cashierProfile)
+                }
+
                 // Print logo atau header
                 try {
                     val drawable = context.resources.getDrawableForDensity(
-                        R.drawable.fashion24_logo_b_w,
+                        R.drawable.fashion24_logo,
                         DisplayMetrics.DENSITY_MEDIUM
                     )
                     val logoHex = PrinterTextParserImg.bitmapToHexadecimalString(escPosPrinter, drawable)
@@ -63,18 +70,13 @@ class PrintReceiptUseCase @Inject constructor(
                     escPosPrinter.printFormattedText("[C]<font size='big'><b>Fashion 24</b></font>\n")
                     e.printStackTrace()
                 }
-
-                // Print konten struk
-                val receiptText = if (transactionId == -1) {
-                    generateReceiptTextFromCart(cartItems, paymentType, cashReceived, cashierProfile)
-                } else {
-                    generateReceiptTextFromHistory(item, paymentType, cashReceived, cashierProfile)
-                }
-
-                escPosPrinter.printFormattedText("[C]SMK Negeri 24 Jakarta\n")
-                escPosPrinter.printFormattedText(formatAddress("Jl. Bambu Hitam No.3, RT.3/RW.1, Bambu Apus, Kec. Cipayung, Kota Jakarta Timur, Daerah Khusus Ibukota Jakarta 13890"))
-                escPosPrinter.printFormattedText(receiptText)
-                escPosPrinter.printFormattedText("\n\n\n")
+                escPosPrinter
+                    .printFormattedText(
+                        "[L]\n" +
+                                "[C]SMK Negeri 24 Jakarta\n" +
+                                formatAddress("Jl. Bambu Hitam No.3, RT.3/RW.1, Bambu Apus, Kec. Cipayung, Kota Jakarta Timur, Daerah Khusus Ibukota Jakarta 13890") +
+                                receiptText
+                )
             } ?: throw Exception("Printer tidak dipilih")
         } catch (e: Exception) {
             e.printStackTrace()
@@ -95,10 +97,9 @@ class PrintReceiptUseCase @Inject constructor(
         sb.append("[C]================================\n")
         sb.append("[L]Kasir : ${cashierProfile.username}\n")
         sb.append("[C]================================\n")
+        sb.append("[L]\n")
 
         data.forEach { item ->
-//            val itemTotal = item.productPrice * item.quantity
-//            sb.append("[L]<b>${item.productName} (${item.productColor}) ${item.productSize}</b>[C]${item.quantity}[R]${CoreFunction.rupiahFormatter(itemTotal.toLong())}\n")
             sb.append(formatReceiptItem(
                 name = item.productName,
                 color = item.productColor,
@@ -108,6 +109,7 @@ class PrintReceiptUseCase @Inject constructor(
             ))
         }
 
+        sb.append("[L]\n")
         sb.append("[C]--------------------------------\n")
         sb.append("[L]<b>Total Item (${data.size}) :[R]${CoreFunction.rupiahFormatter(totalPrice)}</b>\n")
         sb.append("[L]Total Disc :[R]${CoreFunction.rupiahFormatter(0)}\n")
@@ -136,10 +138,9 @@ class PrintReceiptUseCase @Inject constructor(
         sb.append("[C]================================\n")
         sb.append("[L]Kasir : ${cashierProfile.username}\n")
         sb.append("[C]================================\n")
+        sb.append("[L]\n")
 
         data.details.forEach { item ->
-//            val itemTotal = item.productPrice * item.quantity
-//            sb.append("[L]<b>${item.productName} (${item.productColor}) ${item.productSize}</b>[C]${item.quantity}[R]${CoreFunction.rupiahFormatter(itemTotal.toLong())}\n")
             sb.append(formatReceiptItem(
                 name = item.product.name,
                 color = item.product.variants[0].color,
@@ -149,6 +150,7 @@ class PrintReceiptUseCase @Inject constructor(
             ))
         }
 
+        sb.append("[L]\n")
         sb.append("[C]--------------------------------\n")
         sb.append("[L]<b>Total Item (${data.details.size}) :[R]${CoreFunction.rupiahFormatter(totalPrice)}</b>\n")
         sb.append("[L]Total Disc :[R]${CoreFunction.rupiahFormatter(0)}\n")
