@@ -1,8 +1,12 @@
 package com.takumi.kasirkain.presentation.features.checkout
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +19,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -27,23 +33,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.takumi.kasirkain.R
 import com.takumi.kasirkain.presentation.common.components.AppButton
 import com.takumi.kasirkain.presentation.common.components.AppDropdown
 import com.takumi.kasirkain.presentation.common.components.AppOutlinedButton
 import com.takumi.kasirkain.presentation.common.components.ConfirmationDialog
 import com.takumi.kasirkain.presentation.common.components.AppDialog
+import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.checkout.components.RupiahTextField
 import com.takumi.kasirkain.presentation.theme.LocalSpacing
 import com.takumi.kasirkain.presentation.util.CoreFunction
+import com.takumi.kasirkain.presentation.util.PrinterManager
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CheckoutTabletScreen(
     modifier: Modifier = Modifier,
@@ -53,6 +67,8 @@ fun CheckoutTabletScreen(
 ) {
     val totalPayment by viewModel.totalPayment.collectAsState()
     val checkoutState by viewModel.checkoutState.collectAsState()
+    val printState by viewModel.printState.collectAsStateWithLifecycle()
+    val printers by viewModel.printers.collectAsState()
 
     val context = LocalContext.current
 
@@ -60,22 +76,44 @@ fun CheckoutTabletScreen(
     var selectedPaymentType by remember { mutableStateOf("Metode pembayaran") }
     var paymentAmount by remember { mutableLongStateOf(0L) }
     val change = paymentAmount - totalPayment
+    var selectedPrinter by remember { mutableStateOf<PrinterManager.BluetoothPrinter?>(null) }
 
     var showBackDialog by remember { mutableStateOf(false) }
     var showPayDialog by remember { mutableStateOf(false) }
+    var showPrinterDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    when (val state = checkoutState) {
-        is UiState.Idle -> {}
-        is UiState.Loading -> {
-            LoadingDialog("Memproses pembayaran...")
-        }
-        is UiState.Success<Int> -> {
-            onCheckout()
-        }
-        is UiState.Error -> {
-            AppDialog(
-                message = state.message
-            ) {}
+    var errorMessage by remember { mutableStateOf("") }
+
+    val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        listOf(
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_SCAN
+        )
+    } else {
+        listOf(
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN
+        )
+    }
+
+    val permissionState = rememberMultiplePermissionsState(permissions = permissions)
+    var requestPermission by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) return@LaunchedEffect
+        viewModel.loadPrinters()
+    }
+
+    LaunchedEffect(requestPermission) {
+        if (requestPermission) {
+            permissionState.launchMultiplePermissionRequest()
+            requestPermission = false
         }
     }
 
@@ -184,7 +222,11 @@ fun CheckoutTabletScreen(
                 AppOutlinedButton(
                     text = "Kembali",
                     shape = CircleShape,
-                    onClick = { showBackDialog = true },
+                    onClick = {
+                        if (paymentAmount != 0L && selectedPaymentType != "Metode pembayaran") {
+                            showBackDialog = true
+                        } else onNavigateBack()
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -236,6 +278,111 @@ fun CheckoutTabletScreen(
                     )
                 }
             )
+        }
+    }
+
+    when (val state = checkoutState) {
+        is UiState.Idle -> {}
+        is UiState.Loading -> {
+            LoadingDialog("Memproses pembayaran...")
+        }
+        is UiState.Success<Int> -> {
+            if (permissionState.allPermissionsGranted) {
+                showPrinterDialog = true
+            }
+            else if (permissionState.shouldShowRationale){
+                requestPermission = true
+                Toast.makeText(context, "Aplikasi memerlukan akses Bluetooth untuk mencetak struk", Toast.LENGTH_SHORT).show()
+            } else {
+                onCheckout()
+            }
+            viewModel.resetCheckoutState()
+        }
+        is UiState.Error -> {
+            showErrorDialog = true
+            errorMessage = state.message
+            viewModel.resetCheckoutState()
+        }
+    }
+
+    when (val state = printState) {
+        is UiState.Idle -> {}
+        is UiState.Loading -> {
+            LoadingDialog(
+                text = "Mencetak..."
+            )
+        }
+        is UiState.Success<Boolean> -> {
+            if (state.data) {
+                showSuccessDialog = true
+            }
+            viewModel.resetPrintState()
+        }
+        is UiState.Error -> {
+            showErrorDialog = true
+            errorMessage = state.message
+            viewModel.resetPrintState()
+        }
+    }
+
+    if (showPrinterDialog) {
+        ConfirmationDialog(
+            title = "Pilih Printer",
+            onDismiss = {
+                showPrinterDialog = false
+                onCheckout()
+            },
+            enableConfirmButton = selectedPrinter != null,
+            onConfirm = {
+                viewModel.printReceipt(
+                    printer = selectedPrinter!!,
+                    paymentType = selectedPaymentType,
+                    cashReceived = paymentAmount,
+                    context = context
+                )
+                showPrinterDialog = false
+            },
+            content = {
+                AppLazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(printers) { printer ->
+                        Text(
+                            text = printer.name,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = if (selectedPrinter != printer) Color.White else MaterialTheme.colorScheme.tertiary,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .clickable {
+                                    selectedPrinter = printer
+                                }
+                        )
+                    }
+                }
+            }
+        )
+    }
+
+    if (showSuccessDialog) {
+        AppDialog(
+            title = "Berhasil!",
+            message = "Struk berhasil dicetak"
+        ) {
+            showSuccessDialog = false
+            onCheckout()
+        }
+    }
+
+    if (showErrorDialog) {
+        AppDialog(
+            message = errorMessage
+        ) {
+            showErrorDialog = false
+            onCheckout()
         }
     }
 }
