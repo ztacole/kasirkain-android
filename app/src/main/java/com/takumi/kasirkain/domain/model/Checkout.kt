@@ -1,6 +1,6 @@
 package com.takumi.kasirkain.domain.model
 
-import com.takumi.kasirkain.data.remote.request.CheckoutRequest
+import com.takumi.kasirkain.data.remote.model.request.CheckoutRequest
 
 data class Checkout(
     val userId: Int,

@@ -1,6 +1,6 @@
 package com.takumi.kasirkain.domain.model
 
-import com.takumi.kasirkain.data.remote.request.CheckoutDetailRequest
+import com.takumi.kasirkain.data.remote.model.request.CheckoutDetailRequest
 
 data class CheckoutDetail(
     val productVariantId: Int,

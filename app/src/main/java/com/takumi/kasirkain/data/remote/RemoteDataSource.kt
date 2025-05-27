@@ -2,16 +2,16 @@ package com.takumi.kasirkain.data.remote
 
 import android.util.Log
 import com.google.gson.Gson
-import com.takumi.kasirkain.data.remote.request.CheckoutRequest
-import com.takumi.kasirkain.data.remote.request.LoginRequest
-import com.takumi.kasirkain.data.remote.response.CategoryResponse
-import com.takumi.kasirkain.data.remote.response.ErrorResponse
-import com.takumi.kasirkain.data.remote.response.ProductDetailResponse
-import com.takumi.kasirkain.data.remote.response.ProductResponse
-import com.takumi.kasirkain.data.remote.response.ProductVariantResponse
-import com.takumi.kasirkain.data.remote.response.GroupedTransactionResponse
-import com.takumi.kasirkain.data.remote.response.TransactionHeaderResponse
-import com.takumi.kasirkain.data.remote.response.UserResponse
+import com.takumi.kasirkain.data.remote.model.request.CheckoutRequest
+import com.takumi.kasirkain.data.remote.model.request.LoginRequest
+import com.takumi.kasirkain.data.remote.model.response.CategoryResponse
+import com.takumi.kasirkain.data.remote.model.response.ErrorResponse
+import com.takumi.kasirkain.data.remote.model.response.ProductDetailResponse
+import com.takumi.kasirkain.data.remote.model.response.ProductResponse
+import com.takumi.kasirkain.data.remote.model.response.ProductVariantResponse
+import com.takumi.kasirkain.data.remote.model.response.GroupedTransactionResponse
+import com.takumi.kasirkain.data.remote.model.response.TransactionHeaderResponse
+import com.takumi.kasirkain.data.remote.model.response.UserResponse
 import javax.inject.Inject
 
 class RemoteDataSource @Inject constructor(
