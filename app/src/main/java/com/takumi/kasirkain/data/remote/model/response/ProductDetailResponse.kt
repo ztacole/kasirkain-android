@@ -8,7 +8,10 @@ data class ProductDetailResponse(
     val price: Int,
     val image: String,
     val category: CategoryResponse,
-    val variants: List<ProductVariantResponse>
+    val variants: List<ProductVariantResponse>,
+    val active_events: List<EventResponse>,
+    val discount: Int,
+    val final_price: Int,
 ) {
     fun toDomain(): ProductDetail {
         return ProductDetail(
@@ -17,7 +20,10 @@ data class ProductDetailResponse(
             price = price,
             image = image,
             category = category.toDomain(),
-            variants = variants.map { it.toDomain() }
+            variants = variants.map { it.toDomain() },
+            activeEvents = active_events.map { it.toDomain() },
+            discount = discount,
+            finalPrice = final_price,
         )
     }
 }

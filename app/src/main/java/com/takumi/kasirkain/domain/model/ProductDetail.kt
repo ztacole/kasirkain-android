@@ -6,5 +6,8 @@ data class ProductDetail(
     val price: Int,
     val image: String,
     val category: Category,
-    val variants: List<ProductVariant>
+    val variants: List<ProductVariant>,
+    val activeEvents: List<Event>,
+    val discount: Int,
+    val finalPrice: Int,
 )
