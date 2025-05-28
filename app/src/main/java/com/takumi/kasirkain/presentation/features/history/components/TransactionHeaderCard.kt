@@ -57,7 +57,7 @@ fun TransactionHeaderCard(
                     maxLines = 1
                 )
                 Text(
-                    text = "Jenis Produk: $productCount",
+                    text = "Total Item: $productCount",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.fillMaxWidth(),
                     overflow = TextOverflow.Ellipsis,

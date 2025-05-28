@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.items
@@ -340,6 +342,7 @@ fun ReceiptPreview(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     DoubleLineHorizontalDivider()
+                    Spacer(Modifier.height(LocalSpacing.current.paddingMedium.dp))
                     state.data.details.forEach { detail ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -356,7 +359,7 @@ fun ReceiptPreview(
                                     style = MaterialTheme.typography.bodyLarge,
                                     maxLines = 1
                                 )
-                                if (true) {
+                                if (detail.product.discount > 0) {
                                     Text(
                                         text = "   Diskon:\n   Subtotal:",
                                         style = MaterialTheme.typography.bodyLarge
@@ -364,23 +367,23 @@ fun ReceiptPreview(
                                 }
                             }
                             Text(
-                                text = CoreFunction.currencyFormatter(detail.product.finalPrice.toLong()),
+                                text = CoreFunction.currencyFormatter(detail.product.price.toLong()),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    text = CoreFunction.currencyFormatter((detail.product.finalPrice * detail.quantity).toLong()),
+                                    text = CoreFunction.currencyFormatter((detail.product.price * detail.quantity).toLong()),
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.fillMaxWidth(),
                                     textAlign = TextAlign.End
                                 )
-                                if (true) {
+                                if (detail.product.discount > 0) {
                                     Text(
                                         text = "",
                                         style = MaterialTheme.typography.bodyLarge
                                     )
                                     Text(
-                                        text = "${CoreFunction.currencyFormatter(1000)}\n${CoreFunction.currencyFormatter(1000)}",
+                                        text = "${CoreFunction.currencyFormatter((detail.product.price - detail.product.finalPrice).toLong())}\n${CoreFunction.currencyFormatter((detail.product.finalPrice * detail.quantity).toLong())}",
                                         style = MaterialTheme.typography.bodyLarge,
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.End
@@ -389,6 +392,7 @@ fun ReceiptPreview(
                             }
                         }
                     }
+                    Spacer(Modifier.height(LocalSpacing.current.paddingMedium.dp))
                     HorizontalDivider()
                     TotalSection(
                         text = "Total Item (${state.data.details.count()}) : ",
