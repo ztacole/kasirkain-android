@@ -110,7 +110,6 @@ fun CartTabletScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
-                .padding(WindowInsets.statusBars.asPaddingValues())
         ) {
             Text(
                 text = "Transaksi",

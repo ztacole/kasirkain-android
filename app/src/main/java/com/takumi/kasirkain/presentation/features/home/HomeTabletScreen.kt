@@ -162,8 +162,7 @@ fun HomeTabletScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(WindowInsets.statusBars.asPaddingValues()),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             selectedProduct = selectedProduct,
             productVariants = productVariants,
             context = context,
@@ -347,7 +346,7 @@ fun TabletHomeHeaderSection(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.White)
-            .padding(top = LocalSpacing.current.paddingMedium.dp),
+            .padding(top = 4.dp),
         verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
     ) {
         Column(
@@ -358,7 +357,10 @@ fun TabletHomeHeaderSection(
                     text = "Halo, ${it.username}",
                     style = MaterialTheme.typography.titleLarge,
                 )
-            }
+            } ?: Text(
+                text = "Halo",
+                style = MaterialTheme.typography.titleLarge,
+            )
             ShowCurrentTime()
         }
         Row(

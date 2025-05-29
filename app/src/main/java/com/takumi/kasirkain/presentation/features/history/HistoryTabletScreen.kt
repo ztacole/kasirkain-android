@@ -179,7 +179,6 @@ fun HistoryTabletScreen(
                 .weight(1f)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(WindowInsets.statusBars.asPaddingValues())
                 .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
             verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingLarge.dp)
         ) {

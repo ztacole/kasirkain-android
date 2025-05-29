@@ -141,8 +141,6 @@ fun CheckoutTabletScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .verticalScroll(scrollState),
         ) {
             Text(
                 text = "Pembayaran",
@@ -154,6 +152,7 @@ fun CheckoutTabletScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxSize()
+                    .verticalScroll(scrollState)
             ) {
                 Text(
                     text = "Nominal yang harus dibayar :",
@@ -221,7 +220,7 @@ fun CheckoutTabletScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = LocalSpacing.current.paddingMedium.dp),
+                    .padding(bottom = LocalSpacing.current.paddingMedium.dp, top = LocalSpacing.current.paddingSmall.dp),
                 horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
             ) {
                 AppOutlinedButton(
