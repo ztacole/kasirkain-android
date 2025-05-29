@@ -69,6 +69,7 @@ import com.takumi.kasirkain.presentation.features.home.components.CategoryCard
 import com.takumi.kasirkain.presentation.features.home.components.LoadingTabletProduct
 import com.takumi.kasirkain.presentation.features.home.components.ProductVariantCard
 import com.takumi.kasirkain.presentation.features.home.components.SearchTextField
+import com.takumi.kasirkain.presentation.features.home.components.ShowCurrentTime
 import com.takumi.kasirkain.presentation.features.home.components.TabletProductCard
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
@@ -358,10 +359,7 @@ fun TabletHomeHeaderSection(
                     style = MaterialTheme.typography.titleLarge,
                 )
             }
-            Text(
-                text = "17:00 WIB",
-                style = MaterialTheme.typography.bodyLarge
-            )
+            ShowCurrentTime()
         }
         Row(
             modifier = Modifier
