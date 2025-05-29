@@ -158,7 +158,9 @@ fun AppNavigation(
                     Screen.History.route,
                 ) {
                     previousRoute = Screen.History.route
-                    HistoryTabletScreen()
+                    HistoryTabletScreen(
+                        scrollBehavior = scrollBehavior
+                    )
                 }
                 composable(
                     Screen.Cart.route
@@ -168,7 +170,8 @@ fun AppNavigation(
                             navController.navigate(Screen.Checkout.route) {
                                 popUpTo(Screen.Home.route)
                             }
-                        }
+                        },
+                        scrollBehavior = scrollBehavior
                     )
                 }
                 composable(Screen.Checkout.route) {

@@ -19,11 +19,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,12 +48,13 @@ import com.takumi.kasirkain.presentation.theme.Black
 import com.takumi.kasirkain.presentation.theme.LocalSpacing
 import com.takumi.kasirkain.presentation.util.CoreFunction
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CartTabletScreen(
     modifier: Modifier = Modifier,
     viewModel: CartViewModel = hiltViewModel(),
-    onNavigateToCheckoutScreen: () -> Unit
+    onNavigateToCheckoutScreen: () -> Unit,
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
 
@@ -66,7 +70,8 @@ fun CartTabletScreen(
         AppLazyColumn(
             modifier = Modifier
                 .weight(2f)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
             contentPadding = PaddingValues(LocalSpacing.current.paddingSmall.dp)
         ) {

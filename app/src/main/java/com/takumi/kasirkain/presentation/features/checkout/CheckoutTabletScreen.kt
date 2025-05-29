@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,6 +74,7 @@ fun CheckoutTabletScreen(
     val printers by viewModel.printers.collectAsState()
 
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
     val paymentTypes = listOf("QRIS", "Cash")
     var selectedPaymentType by remember { mutableStateOf("Metode pembayaran") }
@@ -137,7 +141,8 @@ fun CheckoutTabletScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
-                .padding(WindowInsets.statusBars.asPaddingValues()),
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .verticalScroll(scrollState),
         ) {
             Text(
                 text = "Pembayaran",

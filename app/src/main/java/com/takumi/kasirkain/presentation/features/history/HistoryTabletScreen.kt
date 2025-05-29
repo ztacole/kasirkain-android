@@ -29,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -73,7 +75,8 @@ import com.takumi.kasirkain.presentation.util.PrinterManager
 @Composable
 fun HistoryTabletScreen(
     modifier: Modifier = Modifier,
-    viewModel: HistoryViewModel = hiltViewModel()
+    viewModel: HistoryViewModel = hiltViewModel(),
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     val context = LocalContext.current
 
@@ -128,7 +131,8 @@ fun HistoryTabletScreen(
         AppLazyColumn(
             modifier = Modifier
                 .weight(2f)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingLarge.dp),
             contentPadding = PaddingValues(vertical = LocalSpacing.current.paddingMedium.dp)
         ) {
