@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy.Companion.IGNORE
 import androidx.room.Query
 import androidx.room.Update
 import com.takumi.kasirkain.data.local.entity.CartEntity
+import com.takumi.kasirkain.domain.model.CartItem
 
 @Dao
 interface CartDao {
@@ -17,6 +18,18 @@ interface CartDao {
 
     @Query("UPDATE cart SET quantity = :quantity WHERE productVariantId = :productVariantId")
     suspend fun updateQuantity(productVariantId: Int, quantity: Int)
+
+//    @Query("""
+//        UPDATE cart SET
+//        productEventName = NULL,
+//        productEventStartDate = NULL,
+//        productEventEndDate = NULL,
+//        productDiscount = 0,
+//        productFinalPrice = :price
+//        WHERE productVariantId = :productVariantId
+//    """)
+    @Update
+    suspend fun updateExpiredEventItem(cartItem: CartEntity)
 
     @Query("DELETE FROM cart WHERE productVariantId = :productVariantId")
     suspend fun deleteCartItem(productVariantId: Int)

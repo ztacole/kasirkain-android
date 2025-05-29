@@ -2,6 +2,7 @@ package com.takumi.kasirkain.data.local
 
 import com.takumi.kasirkain.data.local.entity.CartEntity
 import com.takumi.kasirkain.data.local.entity.TokenEntity
+import com.takumi.kasirkain.domain.model.CartItem
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
@@ -27,6 +28,10 @@ class LocalDataSource @Inject constructor(
 
     suspend fun updateQuantity(productVariantId: Int, quantity: Int) {
         db.cartDao().updateQuantity(productVariantId, quantity)
+    }
+
+    suspend fun updateExpiredEventItem(cartItem: CartEntity) {
+        db.cartDao().updateExpiredEventItem(cartItem)
     }
 
     suspend fun deleteCartItem(item: CartEntity) {

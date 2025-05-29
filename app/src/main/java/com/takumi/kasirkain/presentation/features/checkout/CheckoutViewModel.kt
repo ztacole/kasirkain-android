@@ -45,7 +45,7 @@ class CheckoutViewModel @Inject constructor(
     private fun getTotalPayment() {
         viewModelScope.launch {
             _cartItems.value = getCartItemsUseCase()
-            _totalPayment.value = _cartItems.value.sumOf { it.quantity * it.productPrice }
+            _totalPayment.value = _cartItems.value.sumOf { it.quantity * it.productFinalPrice }
         }
     }
 

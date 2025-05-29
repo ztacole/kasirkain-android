@@ -140,9 +140,11 @@ fun HomeTabletScreen(
                 products = products,
                 context = context,
                 onProductClick = {
-                    selectedProduct = it
-                    selectedProduct?.let {
-                        viewModel.getProductVariants(it.id)
+                    if (selectedProduct != it) {
+                        selectedProduct = it
+                        selectedProduct?.let {
+                            viewModel.getProductVariants(it.id)
+                        }
                     }
                 }
             )
@@ -419,7 +421,6 @@ fun TabletHomeHeaderSection(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
         HorizontalDivider(
             modifier = Modifier.shadow(
                 elevation = 5.dp,
@@ -440,7 +441,7 @@ fun TabletHomeContentSection(
     onProductClick: (Product) -> Unit
 ) {
     AppLazyVerticalGrid(
-        columns = GridCells.Fixed(5),
+        columns = GridCells.Fixed(4),
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
         horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
@@ -452,7 +453,7 @@ fun TabletHomeContentSection(
             when (state) {
                 is UiState.Idle -> {}
                 is UiState.Loading -> {
-                    items(5) { LoadingTabletProduct() }
+                    items(4) { LoadingTabletProduct() }
                 }
 
                 is UiState.Success<List<Product>> -> {
@@ -464,9 +465,11 @@ fun TabletHomeContentSection(
                                     onProductClick(product)
                                 },
                             name = product.name,
-                            price = product.finalPrice,
+                            price = product.price,
                             variantCount = product.variantCount,
-                            imageName = product.image
+                            imageName = product.image,
+                            discount = product.discount,
+                            finalPrice = product.finalPrice
                         )
                     }
                 }

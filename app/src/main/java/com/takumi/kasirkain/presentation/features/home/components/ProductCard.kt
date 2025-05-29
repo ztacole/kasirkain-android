@@ -1,6 +1,7 @@
 package com.takumi.kasirkain.presentation.features.home.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -113,9 +115,11 @@ fun TabletProductCard(
     name: String,
     variantCount: Int,
     price: Int,
-    imageName: String
+    imageName: String,
+    discount: Int,
+    finalPrice: Int
 ) {
-    val imageUrl = if (imageName.isEmpty()) null else "${AppModule.provideBaseUrl()}product/$imageName/photo"
+    val imageUrl = "${AppModule.provideBaseUrl()}product/$imageName/photo"
 
     Card(
         modifier = modifier,
@@ -127,7 +131,7 @@ fun TabletProductCard(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(imageUrl)
                 .crossfade(true)
-                .memoryCacheKey(if (imageName.isEmpty()) null else imageName)
+                .memoryCacheKey(imageName)
                 .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
@@ -146,7 +150,7 @@ fun TabletProductCard(
         ) {
             Text(
                 text = name,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.fillMaxWidth(),
                 overflow = TextOverflow.Ellipsis,
@@ -155,20 +159,57 @@ fun TabletProductCard(
             Text(
                 text = "Varian: $variantCount",
                 color = MaterialTheme.colorScheme.onSecondary,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.fillMaxWidth(),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1
             )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = CoreFunction.rupiahFormatter(price.toLong()),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1
-            )
+            Spacer(Modifier.height(LocalSpacing.current.paddingSmall.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = CoreFunction.rupiahFormatter(finalPrice.toLong()),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1
+                )
+                if (discount > 0) {
+                    Text(
+                        text = CoreFunction.rupiahFormatter(price.toLong()),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f),
+                        maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSecondary,
+                        textDecoration = TextDecoration.LineThrough
+                    )
+                    Text(
+                        text = "$discount%",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.tertiary,
+                                shape = MaterialTheme.shapes.extraSmall
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                else {
+                    Text(
+                        text = "",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -180,7 +221,7 @@ fun LoadingTabletProduct() {
     ) {
         Spacer(
             modifier = Modifier
-                .size(160.dp)
+                .size(200.dp)
                 .clip(MaterialTheme.shapes.large)
                 .shimmer()
         )
@@ -220,11 +261,13 @@ fun LoadingTabletProduct() {
 @Composable
 private fun Preview() {
     KasirKainTheme {
-        ProductCard(
+        TabletProductCard(
             name = "Baju",
-            variantCount = 10,
-            price = 129900,
-            imageName = ""
+            variantCount = 3,
+            price = 100000,
+            imageName = "",
+            discount = 20,
+            finalPrice = 80000
         )
     }
 }

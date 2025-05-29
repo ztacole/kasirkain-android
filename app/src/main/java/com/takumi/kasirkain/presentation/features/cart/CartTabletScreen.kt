@@ -75,9 +75,13 @@ fun CartTabletScreen(
                     modifier = Modifier,
                     name = item.productName,
                     imageName = item.productImage,
-                    barcode = item.barcode,
+                    size = item.productSize,
+                    color = item.productColor,
                     stock = item.stock,
                     quantity = item.quantity,
+                    price = item.productPrice,
+                    discount = item.productDiscount,
+                    finalPrice = item.productFinalPrice,
                     onDecrease = {
                         viewModel.decreaseCartItemQuantity(item)
                     },
@@ -154,7 +158,7 @@ fun CartTabletScreen(
                             )
                         }
                         Text(
-                            text = CoreFunction.rupiahFormatter((item.quantity * item.productPrice).toLong()),
+                            text = CoreFunction.rupiahFormatter((item.quantity * item.productFinalPrice).toLong()),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -167,7 +171,7 @@ fun CartTabletScreen(
                 verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
             ) {
                 Text(
-                    text = "Total: ${CoreFunction.rupiahFormatter(cartItems.sumOf { it.quantity * it.productPrice }.toLong())}",
+                    text = "Total: ${CoreFunction.rupiahFormatter(cartItems.sumOf { it.quantity * it.productFinalPrice }.toLong())}",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.align(Alignment.Start)
                 )

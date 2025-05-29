@@ -7,6 +7,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.takumi.kasirkain.domain.model.ProductDetail
 import com.takumi.kasirkain.domain.model.ProductVariant
+import com.takumi.kasirkain.presentation.common.components.ConfirmationDialog
 import com.takumi.kasirkain.presentation.util.CoreFunction
 
 @Composable
@@ -16,36 +17,26 @@ fun AfterScanDialog(
     product: ProductDetail
 ) {
     val productVariant = product.variants[0]
-    AlertDialog(
-        onDismissRequest = { },
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        title = {
-            Text(text = "Produk ditemukan")
+    ConfirmationDialog(
+        title = "Produk ditemukan",
+        onDismiss = {
+            onDismissRequest()
+            onAddToCart(null)
         },
-        text = {
+        onConfirm = {
+            onDismissRequest()
+            onAddToCart(productVariant)
+        },
+        confirmText = "Masukkan keranjang",
+        dismissText = "Scan ulang",
+        content = {
             Text(
                 text = """Nama: ${product.name}
-                    |Ukuran: ${productVariant.size}
+                    |Size: ${productVariant.size}
                     |Warna: ${productVariant.color}
-                    |Stok: ${productVariant.stock}
-                    |Harga: ${CoreFunction.rupiahFormatter(product.finalPrice.toLong())}""".trimMargin()
+                    |Stok tersisa: ${productVariant.stock}
+                    |Harga saat ini: ${CoreFunction.rupiahFormatter(product.finalPrice.toLong())}""".trimMargin()
             )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                    onAddToCart(productVariant)
-                }
-            ) { Text("Tambah ke Keranjang") }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                    onAddToCart(null)
-                }
-            ) { Text("Scan Ulang") }
         }
     )
 }

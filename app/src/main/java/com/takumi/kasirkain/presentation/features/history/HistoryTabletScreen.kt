@@ -317,6 +317,9 @@ fun ReceiptPreview(
                 fillPaymentTypeValue(state.data.paymentType)
                 fillCashReceivedValue(state.data.cashReceived.toLong())
 
+                val totalPriceBeforeDiscount = state.data.details.sumOf { it.product.price * it.quantity }.toLong()
+                val totalPrice = state.data.details.sumOf { it.product.finalPrice * it.quantity}.toLong()
+
                 Column(
                     verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
                     modifier = Modifier.padding(LocalSpacing.current.paddingMedium.dp)
@@ -396,12 +399,15 @@ fun ReceiptPreview(
                     HorizontalDivider()
                     TotalSection(
                         text = "Total Item (${state.data.details.count()}) : ",
-                        number = state.data.details.sumOf { it.product.finalPrice * it.quantity }.toLong()
+                        number = totalPriceBeforeDiscount
                     )
-                    TotalSection("Total Disc : ", 0)
                     TotalSection(
-                        text = "Total Harga : ",
-                        number = state.data.details.sumOf { it.product.finalPrice * it.quantity }.toLong()
+                        text = "Total Disc. : ",
+                        number = totalPriceBeforeDiscount - totalPrice
+                    )
+                    TotalSection(
+                        text = "Total Belanja : ",
+                        number = totalPrice
                     )
                     TotalSection(
                         text = "${state.data.paymentType} : ",

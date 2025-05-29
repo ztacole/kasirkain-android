@@ -117,22 +117,6 @@ fun AppNavigation(
                     }
                 }
             },
-            bottomBar = {
-                if (deviceType == DeviceType.Phone) {
-                    if (currentRoute == Screen.Home.route || currentRoute == Screen.History.route) {
-                        Column {
-                            HorizontalDivider(
-                                modifier = Modifier.shadow(2.dp),
-                                color = Color.LightGray.copy(alpha = 0.3f)
-                            )
-                            AppBottomBar(
-                                modifier = Modifier,
-                                navController = navController,
-                            ) { showRequestPermission = true }
-                        }
-                    }
-                }
-            },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             NavHost(
@@ -150,26 +134,14 @@ fun AppNavigation(
             ) {
                 composable("splash") { }
                 composable(Screen.Auth.route) {
-                    if (deviceType == DeviceType.Tablet) {
-                        AuthTabletScreen(
-                            onLoginSuccess = {
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(Screen.Auth.route) { inclusive = true }
-                                    launchSingleTop = true
-                                }
+                    AuthTabletScreen(
+                        onLoginSuccess = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Auth.route) { inclusive = true }
+                                launchSingleTop = true
                             }
-                        )
-                    }
-                    else {
-                        AuthScreen(
-                            onLoginSuccess = {
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(Screen.Auth.route) { inclusive = true }
-                                    launchSingleTop = true
-                                }
-                            }
-                        )
-                    }
+                        }
+                    )
                 }
                 composable(
                     Screen.Home.route,
@@ -181,15 +153,12 @@ fun AppNavigation(
                         },
                         scrollBehavior = scrollBehavior
                     )
-//                    if (deviceType == DeviceType.Tablet) HomeTabletScreen(scrollBehavior = scrollBehavior)
-//                    else HomeScreen()
                 }
                 composable(
                     Screen.History.route,
                 ) {
                     previousRoute = Screen.History.route
-                    if (deviceType == DeviceType.Phone) HistoryTabletScreen()
-                    else HistoryTabletScreen()
+                    HistoryTabletScreen()
                 }
                 composable(
                     Screen.Cart.route
@@ -213,71 +182,6 @@ fun AppNavigation(
                             }
                         }
                     )
-                }
-            }
-
-            if (showRequestPermission) {
-                RequestCameraPermission(
-                    onGranted = {
-                        showScanner = true
-                    },
-                    onDenied = {
-                        showDeniedDialog = true
-                    }
-                )
-            }
-
-            if (showScanner) {
-                showDeniedDialog = false
-                ScannerBottomSheet(
-                    modifier = Modifier,
-                    sheetState = sheetState,
-                    onDismiss = {
-                        showRequestPermission = false
-                        showScanner = false
-                    },
-                    onBarcodeScanned = {
-                        scanResult = it
-                    }
-                )
-            }
-
-            if (showDeniedDialog) {
-                AppDialog(
-                    message = "Izin kamera diperlukan!"
-                ) {
-                    showRequestPermission = false
-                    showDeniedDialog = false
-                }
-            }
-
-            if (scanResult.isNotEmpty()) {
-                productVariant.let { state ->
-                    when (state) {
-                        is UiState.Idle -> {}
-                        is UiState.Loading -> {
-                            LoadingDialog()
-                        }
-
-                        is UiState.Success -> {
-                            AfterScanDialog(
-                                onDismissRequest = { scanResult = "" },
-                                onAddToCart = { data ->
-                                    if (data != null) Log.d(
-                                        "Product Variant",
-                                        "Product Variant: $data"
-                                    )
-                                },
-                                product = state.data
-                            )
-                        }
-
-                        is UiState.Error -> {
-                            AppDialog(
-                                message = state.message
-                            ) { scanResult = "" }
-                        }
-                    }
                 }
             }
         }

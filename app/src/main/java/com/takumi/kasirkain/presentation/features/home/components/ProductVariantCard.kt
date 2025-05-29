@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,7 +54,7 @@ fun ProductVariantCard(
                     maxLines = 1
                 )
                 Text(
-                    text = "Ukuran: $size",
+                    text = "Size: $size",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.fillMaxWidth(),
                     overflow = TextOverflow.Ellipsis,
@@ -70,8 +71,9 @@ fun ProductVariantCard(
             Spacer(Modifier.width(LocalSpacing.current.paddingSmall.dp))
             Text(
                 text = "Stok: $stock",
+                color = if (stock == 0) Color.Red else MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.align(Alignment.Top)
+                modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
         Spacer(Modifier.width(LocalSpacing.current.paddingSmall.dp))
@@ -79,8 +81,11 @@ fun ProductVariantCard(
             onClick,
             colors = IconButtonDefaults.iconButtonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.secondary,
+                disabledContentColor = MaterialTheme.colorScheme.onSecondary
+            ),
+            enabled = stock != 0,
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_add),
