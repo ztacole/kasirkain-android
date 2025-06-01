@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,14 +40,13 @@ import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.auth.login.components.LoginForm
-import com.takumi.kasirkain.presentation.theme.KasirKainTheme
 import com.takumi.kasirkain.presentation.theme.LocalSpacing
 
 @Composable
 fun AuthTabletScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = hiltViewModel(),
-    onLoginSuccess: ()-> Unit
+    onLoginSuccess: () -> Unit
 ) {
     val uiState = viewModel.uiState.collectAsState().value
     var username by remember { mutableStateOf("") }
@@ -59,10 +59,12 @@ fun AuthTabletScreen(
         is UiState.Loading -> {
             LoadingDialog()
         }
+
         is UiState.Success -> {
             onLoginSuccess()
             viewModel.resetState()
         }
+
         is UiState.Error -> {
             LaunchedEffect(uiState.message) {
                 errorMessage = uiState.message
@@ -83,30 +85,50 @@ fun AuthTabletScreen(
         Row(
             modifier = Modifier.fillMaxSize()
         ) {
-            LoginTabletHeaderSection()
-            Spacer(Modifier.width(24.dp))
-            Column(
-                modifier
-                    .fillMaxWidth()
-                    .align(Alignment.CenterVertically)
+            LoginTabletLeftSection(
+                modifier = Modifier
+                    .weight(3f)
+                    .fillMaxSize()
+            )
+            Box(
+                modifier = Modifier
+                    .weight(7f)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Text(
-                    text = "Login",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 40.sp,
-                    style = MaterialTheme.typography.headlineLarge,
+                Box(
                     modifier = Modifier
-                        .padding(bottom = LocalSpacing.current.paddingSmall.dp)
+                        .fillMaxWidth(0.6f)
+                        .fillMaxHeight(0.8f)
+                        .align(Alignment.Center)
                         .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
-                )
-                LoginForm(
-                    modifier = Modifier,
-                    username = username,
-                    onUsernameChange = { username = it },
-                    password = password,
-                    onPasswordChange = { password = it }
                 ) {
-                    viewModel.login(username, password)
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                    ) {
+                        Text(
+                            text = "Login",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 40.sp,
+                            style = MaterialTheme.typography.headlineLarge,
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .width(42.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            thickness = 2.dp
+                        )
+                    }
+                    LoginForm(
+                        modifier = Modifier.align(Alignment.Center),
+                        username = username,
+                        onUsernameChange = { username = it },
+                        password = password,
+                        onPasswordChange = { password = it }
+                    ) {
+                        viewModel.login(username, password)
+                    }
                 }
             }
         }
@@ -114,22 +136,21 @@ fun AuthTabletScreen(
 }
 
 @Composable
-fun LoginTabletHeaderSection() {
+fun LoginTabletLeftSection(
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth(0.45f)
-            .fillMaxHeight()
+        modifier = modifier
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .background(MaterialTheme.colorScheme.primary)
         )
         Row(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(top = 28.dp),
+                .offset(x = (-16).dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
@@ -137,7 +158,7 @@ fun LoginTabletHeaderSection() {
                 contentDescription = null,
                 modifier = Modifier
                     .size(112.dp),
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary)
             )
             Column(
                 modifier = Modifier
@@ -145,24 +166,16 @@ fun LoginTabletHeaderSection() {
             ) {
                 Text(
                     text = "KasirKain",
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.ExtraBold,
                     style = MaterialTheme.typography.headlineLarge
                 )
                 Text(
                     text = "POS Application",
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelLarge
                 )
             }
         }
-    }
-}
-
-@Preview(name = "Tablet", widthDp = 1280, heightDp = 800)
-@Composable
-private fun Prev () {
-    KasirKainTheme {
-        AuthTabletScreen {  }
     }
 }

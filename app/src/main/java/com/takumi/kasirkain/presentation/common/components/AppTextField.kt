@@ -10,12 +10,15 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.takumi.kasirkain.presentation.theme.Gray
 import com.takumi.kasirkain.presentation.theme.KasirKainTheme
+import com.takumi.kasirkain.presentation.theme.LightGray
 
 @Composable
 fun AppTextField(
@@ -24,11 +27,11 @@ fun AppTextField(
     onValueChange: (String)-> Unit,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     readOnly: Boolean = false,
-    placeHolder: String,
+    hint: String = "",
     containerColor: Color = Color.White,
-    leadingIcon: ImageVector? = null,
-    trailingIcon: ImageVector? = null,
-    shape: Shape = MaterialTheme.shapes.medium
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    shape: Shape = RectangleShape
 ) {
     TextField(
         value = value,
@@ -36,29 +39,18 @@ fun AppTextField(
         modifier = modifier.fillMaxWidth(),
         visualTransformation = visualTransformation,
         readOnly = readOnly,
-        placeholder = { Text(placeHolder) },
+        placeholder = { Text(hint) },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = containerColor,
             unfocusedContainerColor = containerColor,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
+            disabledContainerColor = containerColor,
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+            unfocusedIndicatorColor = Gray
         ),
         singleLine = true,
         shape = shape,
-        leadingIcon = {
-            leadingIcon?.let { Icon(
-                imageVector = leadingIcon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondary
-            ) }
-        },
-        trailingIcon = {
-            trailingIcon?.let { Icon(
-                imageVector = trailingIcon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondary
-            ) }
-        }
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon
     )
 }
 
@@ -70,7 +62,7 @@ private fun Preview() {
             value = "",
             onValueChange = {},
             modifier = Modifier.padding(8.dp),
-            placeHolder = "Username"
+            hint = "Username"
         )
     }
 }
