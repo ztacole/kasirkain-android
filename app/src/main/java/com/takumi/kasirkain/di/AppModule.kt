@@ -2,10 +2,10 @@ package com.takumi.kasirkain.di
 
 import android.content.Context
 import androidx.room.Room
+import com.takumi.kasirkain.data.local.TokenManager
 import com.takumi.kasirkain.data.local.AppDatabase
 import com.takumi.kasirkain.data.local.LocalDataSource
 import com.takumi.kasirkain.data.local.dao.CartDao
-import com.takumi.kasirkain.data.local.dao.TokenDao
 import com.takumi.kasirkain.data.remote.ApiService
 import com.takumi.kasirkain.data.remote.RemoteDataSource
 import com.takumi.kasirkain.data.remote.TokenInterceptor
@@ -13,28 +13,17 @@ import com.takumi.kasirkain.data.repository.AuthRepositoryImpl
 import com.takumi.kasirkain.data.repository.CartRepositoryImpl
 import com.takumi.kasirkain.data.repository.CategoryRepositoryImpl
 import com.takumi.kasirkain.data.repository.ProductRepositoryImpl
-import com.takumi.kasirkain.data.repository.TokenRepositoryImpl
 import com.takumi.kasirkain.data.repository.TransactionRepositoryImpl
 import com.takumi.kasirkain.domain.repository.AuthRepository
 import com.takumi.kasirkain.domain.repository.CartRepository
 import com.takumi.kasirkain.domain.repository.CategoryRepository
 import com.takumi.kasirkain.domain.repository.ProductRepository
-import com.takumi.kasirkain.domain.repository.TokenRepository
 import com.takumi.kasirkain.domain.repository.TransactionRepository
-import com.takumi.kasirkain.domain.usecase.AddCartItemUseCase
-import com.takumi.kasirkain.domain.usecase.GetCategoriesUseCase
-import com.takumi.kasirkain.domain.usecase.GetProductUseCase
-import com.takumi.kasirkain.domain.usecase.GetProductVariantByBarcodeUseCase
-import com.takumi.kasirkain.domain.usecase.GetProductVariantsUseCase
-import com.takumi.kasirkain.domain.usecase.GetUserProfileUseCase
-import com.takumi.kasirkain.presentation.features.home.HomeViewModel
 import com.takumi.kasirkain.presentation.util.PrinterManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ActivityComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.android.scopes.ActivityScoped
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -60,15 +49,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideLocalDataSource(
-        db: AppDatabase
-    ): LocalDataSource = LocalDataSource(db)
+    fun provideTokenManager(
+        @ApplicationContext context: Context
+    ): TokenManager = TokenManager(context)
 
     @Provides
     @Singleton
-    fun provideTokenDao(
-        db: AppDatabase
-    ): TokenDao = db.tokenDao()
+    fun provideLocalDataSource(
+        db: AppDatabase,
+        tokenManager: TokenManager
+    ): LocalDataSource = LocalDataSource(db, tokenManager)
 
     @Provides
     @Singleton
@@ -81,9 +71,12 @@ object AppModule {
     fun provideOkHttp(
         localDataSource: LocalDataSource
     ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(TokenInterceptor(tokenProvider =  {
-            localDataSource.getToken()
-        }, clearToken = {localDataSource.clearToken()}))
+        .addInterceptor(
+            TokenInterceptor(
+                tokenProvider =  { localDataSource.getToken() },
+                clearToken = { localDataSource.clearToken() }
+            )
+        )
         .build()
 
     @Provides
@@ -110,12 +103,6 @@ object AppModule {
         remote: RemoteDataSource,
         local: LocalDataSource
     ): AuthRepository = AuthRepositoryImpl(remote, local)
-
-    @Provides
-    @Singleton
-    fun provideTokenRepository(
-        local: LocalDataSource
-    ): TokenRepository = TokenRepositoryImpl(local)
 
     @Provides
     @Singleton
@@ -147,26 +134,4 @@ object AppModule {
     fun providePrinterManager(
         @ApplicationContext context: Context
     ): PrinterManager = PrinterManager(context)
-}
-
-@Module
-@InstallIn(ActivityComponent::class)
-object ViewModelModule {
-    @Provides
-    @ActivityScoped
-    fun provideYourViewModel(
-        getProductUseCase: GetProductUseCase,
-        getCategoriesUseCase: GetCategoriesUseCase,
-        getProductVariantsUseCase: GetProductVariantsUseCase,
-        getProductVariantByBarcodeUseCase: GetProductVariantByBarcodeUseCase,
-        addCartItemUseCase: AddCartItemUseCase,
-        getUserProfileUseCase: GetUserProfileUseCase
-    ): HomeViewModel = HomeViewModel(
-        getProductUseCase,
-        getCategoriesUseCase,
-        getProductVariantsUseCase,
-        getProductVariantByBarcodeUseCase,
-        addCartItemUseCase,
-        getUserProfileUseCase
-    )
 }

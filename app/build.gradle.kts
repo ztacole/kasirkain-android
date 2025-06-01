@@ -42,6 +42,9 @@ android {
 }
 
 dependencies {
+    // DataStore (Preferences)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // Splash Screen
     implementation("androidx.core:core-splashscreen:1.0.1")
 

@@ -6,13 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ShowCurrentTime() {
+fun ShowCurrentTime(modifier: Modifier) {
     val timeFormat = remember { SimpleDateFormat("HH:mm 'WIB'", Locale.getDefault()) }
     val currentTime by produceState(initialValue = timeFormat.format(Date())) {
         while (true) {
@@ -23,6 +24,7 @@ fun ShowCurrentTime() {
 
     Text(
         text = currentTime,
-        style = MaterialTheme.typography.bodyLarge
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = modifier
     )
 }

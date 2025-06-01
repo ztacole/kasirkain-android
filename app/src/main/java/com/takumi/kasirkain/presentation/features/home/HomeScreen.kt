@@ -68,7 +68,7 @@ fun HomeScreen(
     var query by remember { mutableStateOf("") }
 
     LaunchedEffect(selectedCategory) {
-        if (selectedCategory > 0) viewModel.getProduct(category = selectedCategory.toString())
+        if (selectedCategory > 0) viewModel.getProduct(category = selectedCategory)
         else viewModel.getProduct()
     }
 
@@ -86,7 +86,7 @@ fun HomeScreen(
                 query = query,
                 onQueryChange = {
                     query = it
-                    viewModel.getProduct(selectedCategory.toString(), query)
+                    viewModel.getProduct(selectedCategory, query)
                 },
                 categories = categories,
                 selectedCategory = selectedCategory,

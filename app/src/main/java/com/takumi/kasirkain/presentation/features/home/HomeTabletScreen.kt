@@ -1,7 +1,5 @@
 package com.takumi.kasirkain.presentation.features.home
 
-import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,7 +57,6 @@ import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppLazyRow
 import com.takumi.kasirkain.presentation.common.components.AppLazyVerticalGrid
-import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.home.components.CategoryCard
 import com.takumi.kasirkain.presentation.features.home.components.LoadingTabletProduct
@@ -68,11 +64,12 @@ import com.takumi.kasirkain.presentation.features.home.components.ProductVariant
 import com.takumi.kasirkain.presentation.features.home.components.SearchTextField
 import com.takumi.kasirkain.presentation.features.home.components.ShowCurrentTime
 import com.takumi.kasirkain.presentation.features.home.components.TabletProductCard
+import com.takumi.kasirkain.presentation.common.state.ScannerState
+import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.navigation.RequestCameraPermission
 import com.takumi.kasirkain.presentation.theme.Black
-import com.takumi.kasirkain.presentation.theme.LocalSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,69 +81,117 @@ fun HomeTabletScreen(
 ) {
     val context = LocalContext.current
 
+    // Collect states
     val products by viewModel.products.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val productVariants by viewModel.productVariants.collectAsStateWithLifecycle()
     val productVariant by viewModel.productVariant.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
-    var showRequestPermission by remember { mutableStateOf(false) }
-
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
-    var showScanner by remember { mutableStateOf(false) }
-    var showDeniedDialog by remember { mutableStateOf(false) }
-    var scanResult by remember { mutableStateOf("") }
-
-    var selectedProduct by remember { mutableStateOf<Product?>(null) }
+    // Local states
+    var scannerState by remember { mutableStateOf<ScannerState>(ScannerState.Idle) }
+    var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableIntStateOf(0) }
-    var query by remember { mutableStateOf("") }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
 
+    // Handle UI events
     LaunchedEffect(Unit) {
-        viewModel.getCategories()
-        viewModel.getUserProfile()
+        viewModel.uiEvents.collect { event ->
+            when (event) {
+                is UiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
-    LaunchedEffect(selectedCategory) {
-        if (selectedCategory > 0) viewModel.getProduct(selectedCategory.toString(), query)
-        else viewModel.getProduct(query)
+    // Effects
+    LaunchedEffect(selectedCategory, searchQuery) {
+        viewModel.getProduct(
+            category = selectedCategory.takeIf { it > 0 },
+            search = searchQuery.takeUnless { it.isEmpty() }
+        )
     }
 
-    LaunchedEffect(query) {
-        viewModel.getProduct(selectedCategory.toString(), query)
+    LaunchedEffect(selectedProduct) {
+        selectedProduct?.let { product ->
+            viewModel.getProductVariants(product.id)
+        }
     }
 
-    Row(
-        modifier.fillMaxSize()
-    ) {
-        Column(
-            modifier = Modifier.weight(2f),
-        ) {
-            TabletHomeHeaderSection(
-                query = query,
-                onQueryChange = { query = it },
-                modifier = Modifier.fillMaxWidth(),
-                userProfile = userProfile,
-                categories = categories,
-                onSelectedCategory = { selectedCategory = it },
-                selectedCategory = selectedCategory,
-                onBarcodeScanning = { showRequestPermission = true }
+    // Scanner handling
+    when (scannerState) {
+        ScannerState.Idle -> {}
+        ScannerState.RequestPermission -> {
+            RequestCameraPermission(
+                onGranted = { scannerState = ScannerState.Active },
+                onDenied = { scannerState = ScannerState.PermissionDenied }
             )
-            TabletHomeContentSection(
-                scrollBehavior = scrollBehavior,
-                products = products,
-                context = context,
-                onProductClick = {
-                    if (selectedProduct != it) {
-                        selectedProduct = it
-                        selectedProduct?.let {
-                            viewModel.getProductVariants(it.id)
-                        }
+        }
+        ScannerState.Active -> {
+            ScannerBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                onDismiss = { scannerState = ScannerState.Idle },
+                onBarcodeScanned = { barcode ->
+                    scannerState = ScannerState.Idle
+                    viewModel.getProductVariantDetail(barcode)
+                }
+            )
+        }
+        ScannerState.PermissionDenied -> {
+            AppDialog(
+                message = "Izin kamera diperlukan untuk memindai barcode!",
+                onDismiss = { scannerState = ScannerState.Idle }
+            )
+        }
+    }
+
+    // Handle scan result
+    when (val state = productVariant) {
+        is UiState.Success -> {
+            AfterScanDialog(
+                product = state.data,
+                onDismissRequest = { viewModel.resetProductVariantState() },
+                onAddToCart = { variant ->
+                    selectedProduct?.let { product ->
+                        viewModel.addProductToCart(product, variant!!)
                     }
                 }
             )
         }
+        is UiState.Error -> {
+            AppDialog(
+                message = state.message,
+                onDismiss = { viewModel.resetProductVariantState() }
+            )
+        }
+        else -> {}
+    }
+
+    // Main layout
+    Row(modifier.fillMaxSize()) {
+        // Left content (2/3 width)
+        Column(Modifier.weight(2f)) {
+            TabletHomeHeaderSection(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                userProfile = userProfile,
+                categories = categories,
+                selectedCategory = selectedCategory,
+                onSelectedCategory = { selectedCategory = it },
+                onBarcodeScanning = { scannerState = ScannerState.RequestPermission }
+            )
+
+            TabletHomeContentSection(
+                scrollBehavior = scrollBehavior,
+                products = products,
+                onProductClick = { product ->
+                    selectedProduct = product.takeIf { it != selectedProduct } ?: selectedProduct
+                }
+            )
+        }
+
+        // Divider
         VerticalDivider(
             modifier = Modifier.shadow(
                 elevation = 10.dp,
@@ -155,217 +200,66 @@ fun HomeTabletScreen(
             ),
             color = Color.Transparent
         )
+
+        // Right sidebar (1/3 width)
         TabletHomeSideSection(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
                 .background(MaterialTheme.colorScheme.primaryContainer),
             selectedProduct = selectedProduct,
             productVariants = productVariants,
-            context = context,
-            onAddToCart = {
-                viewModel.addProductToCart(
-                    product = selectedProduct!!,
-                    productVariant = it
-                )
+            onAddToCart = { variant ->
+                selectedProduct?.let { product ->
+                    viewModel.addProductToCart(product, variant)
+                }
             },
             onNavigateToCart = onNavigateToCart
         )
     }
-
-    if (showRequestPermission) {
-        RequestCameraPermission(
-            onGranted = {
-                showScanner = true
-            },
-            onDenied = {
-                showDeniedDialog = true
-            }
-        )
-    }
-
-    if (showScanner) {
-        showDeniedDialog = false
-        ScannerBottomSheet(
-            modifier = Modifier,
-            sheetState = sheetState,
-            onDismiss = {
-                showRequestPermission = false
-                showScanner = false
-            },
-            onBarcodeScanned = {
-                scanResult = it
-            }
-        )
-    }
-
-    if (showDeniedDialog) {
-        AppDialog(
-            message = "Izin kamera diperlukan!"
-        ) {
-            showRequestPermission = false
-            showDeniedDialog = false
-        }
-    }
-
-    if (scanResult.isNotEmpty()) {
-        productVariant.let { state ->
-            when (state) {
-                is UiState.Idle -> {}
-                is UiState.Loading -> {
-                    LoadingDialog()
-                }
-
-                is UiState.Success -> {
-                    AfterScanDialog(
-                        onDismissRequest = { scanResult = "" },
-                        onAddToCart = { data ->
-                            if (data != null) Log.d(
-                                "Product Variant",
-                                "Product Variant: $data"
-                            )
-                        },
-                        product = state.data
-                    )
-                }
-
-                is UiState.Error -> {
-                    AppDialog(
-                        message = state.message
-                    ) { scanResult = "" }
-                }
-            }
-        }
-    }
 }
 
 @Composable
-fun TabletHomeSideSection(
-    modifier: Modifier = Modifier,
-    selectedProduct: Product?,
-    productVariants: UiState<List<ProductVariant>>,
-    context: Context,
-    onAddToCart: (ProductVariant) -> Unit,
-    onNavigateToCart: () -> Unit
-) {
-    Column(
-        modifier = modifier
-    ) {
-        if (selectedProduct == null) {
-            Box(Modifier
-                .fillMaxSize()
-                .padding(horizontal = LocalSpacing.current.paddingMedium.dp)) {
-                Text(
-                    text = "Varian Produk",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.align(Alignment.TopStart)
-                )
-                Text(
-                    text = "Pilih produk terlebih dahulu",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSecondary,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        } else {
-            productVariants.let { state ->
-                when (state) {
-                    is UiState.Idle -> {}
-                    is UiState.Loading -> {}
-                    is UiState.Success<List<ProductVariant>> -> {
-                        selectedProduct.let { product ->
-                            Column(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
-                            ) {
-                                Text(
-                                    text = product.name,
-                                    style = MaterialTheme.typography.titleLarge,
-                                )
-                                Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
-                                AppLazyColumn(
-                                    modifier = Modifier.weight(1f).fillMaxSize(),
-                                    verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
-                                    contentPadding = PaddingValues(
-                                        horizontal = LocalSpacing.current.paddingSmall.dp,
-                                        vertical = LocalSpacing.current.paddingLarge.dp
-                                    )
-                                ) {
-                                    items(state.data, key = {it.id}) { variant ->
-                                        ProductVariantCard(
-                                            modifier = Modifier,
-                                            barcode = variant.barcode,
-                                            size = variant.size,
-                                            color = variant.color,
-                                            stock = variant.stock,
-                                            onClick = {
-                                                onAddToCart(variant)
-                                            }
-                                        )
-                                    }
-                                }
-                                AppButton(
-                                    text = "Buka Keranjang",
-                                    onClick = onNavigateToCart,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = LocalSpacing.current.paddingMedium.dp),
-                                    shape = CircleShape
-                                )
-                            }
-                        }
-                    }
-                    is UiState.Error -> {
-                        Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TabletHomeHeaderSection(
-    modifier: Modifier = Modifier,
+private fun TabletHomeHeaderSection(
     query: String,
     onQueryChange: (String) -> Unit,
-    userProfile: User?,
+    userProfile: UiState<User>,
     categories: UiState<List<Category>>,
     selectedCategory: Int,
     onSelectedCategory: (Int) -> Unit,
-    onBarcodeScanning: () -> Unit
+    onBarcodeScanning: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.White)
-            .padding(top = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = LocalSpacing.current.paddingMedium.dp)
-        ) {
-            userProfile?.let {
+        // User profile
+        when (userProfile) {
+            is UiState.Success -> {
                 Text(
-                    text = "Halo, ${it.username}",
+                    text = "Halo, ${userProfile.data.username}",
                     style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
-            } ?: Text(
-                text = "Halo",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            ShowCurrentTime()
+            }
+            else -> {
+                // Show skeleton loading if needed
+            }
         }
+
+        // Current time
+        ShowCurrentTime(
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        // Search and scan row
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SearchTextField(
                 value = query,
@@ -374,9 +268,7 @@ fun TabletHomeHeaderSection(
                 modifier = Modifier.weight(1f)
             )
             IconButton(
-                onClick = {
-                    onBarcodeScanning()
-                },
+                onClick = onBarcodeScanning,
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -384,43 +276,44 @@ fun TabletHomeHeaderSection(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_scanner),
-                    contentDescription = null,
-                    modifier = Modifier.size(LocalSpacing.current.smallIconSize.dp),
+                    contentDescription = "Scan Barcode",
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
-        AppLazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = LocalSpacing.current.paddingMedium.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            categories.let { state ->
-                when (state) {
-                    is UiState.Idle -> {}
-                    is UiState.Loading -> {
-                        items(3) { LoadingCategory() }
-                    }
 
-                    is UiState.Success<List<Category>> -> {
-                        items(state.data, key = { it.id }) { category ->
-                            CategoryCard(
-                                onClick = { onSelectedCategory(category.id) },
-                                modifier = Modifier,
-                                text = category.name,
-                                selected = selectedCategory == category.id
-                            )
-                        }
-                    }
-
-                    is UiState.Error -> {
-                        Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+        // Categories
+        when (categories) {
+            is UiState.Success -> {
+                AppLazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(categories.data) { category ->
+                        CategoryCard(
+                            text = category.name,
+                            selected = selectedCategory == category.id,
+                            onClick = { onSelectedCategory(category.id) }
+                        )
                     }
                 }
             }
+            is UiState.Loading -> {
+                AppLazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(5) {
+                        LoadingCategory()
+                    }
+                }
+            }
+            else -> {}
         }
+
         HorizontalDivider(
             modifier = Modifier.shadow(
-                elevation = 5.dp,
+                elevation = 10.dp,
                 spotColor = Black.copy(alpha = 0.3f),
                 ambientColor = Black.copy(alpha = 0.3f)
             ),
@@ -431,50 +324,131 @@ fun TabletHomeHeaderSection(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TabletHomeContentSection(
+private fun TabletHomeContentSection(
     scrollBehavior: TopAppBarScrollBehavior,
     products: UiState<List<Product>>,
-    context: Context,
-    onProductClick: (Product) -> Unit
+    onProductClick: (Product) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     AppLazyVerticalGrid(
         columns = GridCells.Fixed(4),
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
-        horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp),
-        contentPadding = PaddingValues(
-            LocalSpacing.current.paddingMedium.dp
-        )
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(16.dp)
     ) {
-        products.let { state ->
-            when (state) {
-                is UiState.Idle -> {}
-                is UiState.Loading -> {
-                    items(4) { LoadingTabletProduct() }
-                }
-
-                is UiState.Success<List<Product>> -> {
-                    items(state.data, key = { it.id }) { product ->
-                        TabletProductCard(
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.large)
-                                .clickable {
-                                    onProductClick(product)
-                                },
-                            name = product.name,
-                            price = product.price,
-                            variantCount = product.variantCount,
-                            imageName = product.image,
-                            discount = product.discount,
-                            finalPrice = product.finalPrice
-                        )
-                    }
-                }
-
-                is UiState.Error -> {
-                    Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+        when (products) {
+            is UiState.Success -> {
+                items(products.data, key = { it.id }) { product ->
+                    TabletProductCard(
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.large)
+                            .clickable {
+                                onProductClick(product)
+                            },
+                        name = product.name,
+                        price = product.price,
+                        variantCount = product.variantCount,
+                        imageName = product.image,
+                        discount = product.discount,
+                        finalPrice = product.finalPrice
+                    )
                 }
             }
+            is UiState.Loading -> {
+                items(4) { LoadingTabletProduct() }
+            }
+            else -> {}
         }
+    }
+}
+
+@Composable
+private fun TabletHomeSideSection(
+    selectedProduct: Product?,
+    productVariants: UiState<List<ProductVariant>>,
+    onAddToCart: (ProductVariant) -> Unit,
+    onNavigateToCart: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.padding(16.dp)) {
+        if (selectedProduct == null) {
+            EmptyProductSelection()
+        } else {
+            when (productVariants) {
+                is UiState.Success -> {
+                    ProductVariantList(
+                        product = selectedProduct,
+                        variants = productVariants.data,
+                        onAddToCart = onAddToCart,
+                        onNavigateToCart = onNavigateToCart
+                    )
+                }
+                is UiState.Loading -> {
+                    // Show loading variants
+                }
+                else -> {}
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyProductSelection() {
+    Box(Modifier.fillMaxSize()) {
+        Text(
+            text = "Varian Produk",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.align(Alignment.TopStart)
+        )
+        Text(
+            text = "Pilih produk terlebih dahulu",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSecondary,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+private fun ProductVariantList(
+    product: Product,
+    variants: List<ProductVariant>,
+    onAddToCart: (ProductVariant) -> Unit,
+    onNavigateToCart: () -> Unit
+) {
+    Column(Modifier.fillMaxSize()) {
+        Text(
+            text = product.name,
+            style = MaterialTheme.typography.titleLarge,
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        AppLazyColumn(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp)
+        ) {
+            items(variants, key = { it.id }) { variant ->
+                ProductVariantCard(
+                    modifier = Modifier,
+                    barcode = variant.barcode,
+                    size = variant.size,
+                    color = variant.color,
+                    stock = variant.stock,
+                    onClick = {
+                        onAddToCart(variant)
+                    }
+                )
+            }
+        }
+
+        AppButton(
+            text = "Buka Keranjang",
+            onClick = onNavigateToCart,
+            modifier = Modifier.fillMaxWidth(),
+            shape = CircleShape
+        )
     }
 }

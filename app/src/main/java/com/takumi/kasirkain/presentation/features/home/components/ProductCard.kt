@@ -16,6 +16,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,12 +31,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.compose.LocalImageLoader
 import coil.request.ImageRequest
+import coil.size.Size
 import com.takumi.kasirkain.di.AppModule
 import com.takumi.kasirkain.presentation.theme.KasirKainTheme
 import com.takumi.kasirkain.presentation.util.CoreFunction
 import com.takumi.kasirkain.presentation.util.shimmer
 import com.takumi.kasirkain.R
+import com.takumi.kasirkain.presentation.common.components.DiscountBadge
 import com.takumi.kasirkain.presentation.theme.LocalSpacing
 
 @Composable
@@ -119,7 +123,11 @@ fun TabletProductCard(
     discount: Int,
     finalPrice: Int
 ) {
-    val imageUrl = "${AppModule.provideBaseUrl()}product/$imageName/photo"
+    val context = LocalContext.current
+    val imageUrl = remember(imageName) {
+        "${AppModule.provideBaseUrl()}product/$imageName/photo"
+    }
+    val imageLoader = LocalImageLoader.current
 
     Card(
         modifier = modifier,
@@ -127,89 +135,89 @@ fun TabletProductCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(imageUrl)
-                .crossfade(true)
-                .memoryCacheKey(imageName)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .scale(1f)
-                .clip(MaterialTheme.shapes.large)
-                .background(MaterialTheme.colorScheme.secondary)
-                .aspectRatio(1f),
-            error = painterResource(R.drawable.kasirkain_logo_gray)
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.fillMaxWidth(),
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1
+        Column {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .memoryCacheKey(imageName)
+                    .diskCacheKey(imageName)
+                    .size(Size.ORIGINAL)
+                    .build(),
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.secondary)
+                    .aspectRatio(1f),
+                imageLoader = imageLoader,
+                error = painterResource(id = R.drawable.kasirkain_logo_gray),
+                placeholder = painterResource(id = R.drawable.kasirkain_logo_gray)
             )
-            Text(
-                text = "Varian: $variantCount",
-                color = MaterialTheme.colorScheme.onSecondary,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.fillMaxWidth(),
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1
-            )
-            Spacer(Modifier.height(LocalSpacing.current.paddingSmall.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+
+            // Content section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
             ) {
                 Text(
-                    text = CoreFunction.rupiahFormatter(finalPrice.toLong()),
+                    text = name,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                if (discount > 0) {
-                    Text(
-                        text = CoreFunction.rupiahFormatter(price.toLong()),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f),
-                        maxLines = 1,
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        textDecoration = TextDecoration.LineThrough
-                    )
-                    Text(
-                        text = "$discount%",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.tertiary,
-                                shape = MaterialTheme.shapes.extraSmall
-                            )
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-                else {
-                    Text(
-                        text = "",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
+
+                Text(
+                    text = "Varian: $variantCount",
+                    color = MaterialTheme.colorScheme.onSecondary,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
+
+                PriceSection(price, discount, finalPrice)
             }
+        }
+    }
+}
+
+@Composable
+private fun PriceSection(
+    price: Int,
+    discount: Int,
+    finalPrice: Int
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = CoreFunction.rupiahFormatter(finalPrice.toLong()),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        if (discount > 0) {
+            Text(
+                text = CoreFunction.rupiahFormatter(price.toLong()),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.onSecondary,
+                textDecoration = TextDecoration.LineThrough,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+
+            DiscountBadge(discount = discount)
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }

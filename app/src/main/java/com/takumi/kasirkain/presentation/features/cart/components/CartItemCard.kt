@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,9 +32,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.LocalImageLoader
 import coil.request.ImageRequest
+import coil.size.Size
 import com.takumi.kasirkain.di.AppModule
 import com.takumi.kasirkain.R
+import com.takumi.kasirkain.presentation.common.components.DiscountBadge
 import com.takumi.kasirkain.presentation.theme.KasirKainTheme
 import com.takumi.kasirkain.presentation.theme.LocalSpacing
 import com.takumi.kasirkain.presentation.util.CoreFunction
@@ -53,26 +57,34 @@ fun CartItemCard(
     onDecrease: () -> Unit,
     onIncrease: () -> Unit
 ) {
-    val imageUrl = if (imageName.isEmpty()) null else "${AppModule.provideBaseUrl()}product/$imageName/photo"
+    val context = LocalContext.current
+    val imageUrl = remember(imageName) {
+        "${AppModule.provideBaseUrl()}product/$imageName/photo"
+    }
+    val imageLoader = LocalImageLoader.current
 
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
+            model = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .crossfade(true)
-                .memoryCacheKey(if (imageName.isEmpty()) null else imageName)
+                .memoryCacheKey(imageName)
+                .diskCacheKey(imageName)
+                .size(Size.ORIGINAL)
                 .build(),
-            contentDescription = null,
+            contentDescription = name,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(120.dp)
                 .clip(MaterialTheme.shapes.large)
                 .background(MaterialTheme.colorScheme.secondary)
                 .aspectRatio(1f),
-            error = painterResource(R.drawable.kasirkain_logo_gray)
+            imageLoader = imageLoader,
+            error = painterResource(id = R.drawable.kasirkain_logo_gray),
+            placeholder = painterResource(id = R.drawable.kasirkain_logo_gray)
         )
         Row(
             modifier = Modifier
@@ -109,17 +121,7 @@ fun CartItemCard(
                 ) {
                     if (discount > 0) {
                         Spacer(Modifier.weight(1f))
-                        Text(
-                            text = "$discount%",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    shape = MaterialTheme.shapes.extraSmall
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                        DiscountBadge(discount)
                         Row(
                             modifier = Modifier.padding(bottom = 4.dp)
                         ) {
