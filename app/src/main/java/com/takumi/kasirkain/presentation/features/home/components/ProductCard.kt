@@ -121,7 +121,8 @@ fun TabletProductCard(
     price: Int,
     imageName: String,
     discount: Int,
-    finalPrice: Int
+    finalPrice: Int,
+    onClick: () -> Unit
 ) {
     val context = LocalContext.current
     val imageUrl = remember(imageName) {
@@ -132,7 +133,11 @@ fun TabletProductCard(
     Card(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            focusedElevation = 6.dp
+        ),
+        onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column {
@@ -275,7 +280,8 @@ private fun Preview() {
             price = 100000,
             imageName = "",
             discount = 20,
-            finalPrice = 80000
+            finalPrice = 80000,
+            onClick = {}
         )
     }
 }

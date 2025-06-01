@@ -341,17 +341,14 @@ private fun TabletHomeContentSection(
             is UiState.Success -> {
                 items(products.data, key = { it.id }) { product ->
                     TabletProductCard(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.large)
-                            .clickable {
-                                onProductClick(product)
-                            },
+                        modifier = Modifier,
                         name = product.name,
                         price = product.price,
                         variantCount = product.variantCount,
                         imageName = product.image,
                         discount = product.discount,
-                        finalPrice = product.finalPrice
+                        finalPrice = product.finalPrice,
+                        onClick = { onProductClick(product) }
                     )
                 }
             }

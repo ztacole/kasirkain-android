@@ -48,7 +48,7 @@ fun HistoryScreen(
 ) {
     val context = LocalContext.current
 
-    val transactions by viewModel.transaction.collectAsStateWithLifecycle()
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     AppLazyColumn(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer),

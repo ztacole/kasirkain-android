@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +65,7 @@ import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.ConfirmationDialog
 import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
+import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.history.components.TransactionCard
 import com.takumi.kasirkain.presentation.theme.Black
@@ -69,7 +73,9 @@ import com.takumi.kasirkain.presentation.theme.LocalSpacing
 import com.takumi.kasirkain.presentation.util.CoreFunction
 import com.takumi.kasirkain.presentation.util.PrinterManager
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
+@OptIn(
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
     ExperimentalPermissionsApi::class
 )
 @Composable
@@ -80,22 +86,24 @@ fun HistoryTabletScreen(
 ) {
     val context = LocalContext.current
 
-    val transactions by viewModel.transaction.collectAsStateWithLifecycle()
+    // States
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val transactionDetail by viewModel.transactionDetail.collectAsStateWithLifecycle()
     val printState by viewModel.printState.collectAsStateWithLifecycle()
-    val printers by viewModel.printers.collectAsState()
+    val printers by viewModel.printers.collectAsStateWithLifecycle()
 
+    // Local states
     var selectedPrinter by remember { mutableStateOf<PrinterManager.BluetoothPrinter?>(null) }
-    var selectedTransactionId by remember { mutableIntStateOf(-1) }
-    var paymentType by remember { mutableStateOf("") }
-    var cashReceived by remember { mutableLongStateOf(0) }
+    var selectedTransactionId by rememberSaveable { mutableIntStateOf(-1) }
+    var paymentType by rememberSaveable { mutableStateOf("") }
+    var cashReceived by rememberSaveable { mutableLongStateOf(0L) }
 
+    // Dialog states
     var showPrinterDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    var errorMessage by remember { mutableStateOf("") }
-
+    // Permissions
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         listOf(
             Manifest.permission.BLUETOOTH_CONNECT,
@@ -108,64 +116,59 @@ fun HistoryTabletScreen(
         )
     }
 
-    val permissionState = rememberMultiplePermissionsState(permissions = permissions)
-    var requestPermission by remember { mutableStateOf(false) }
+    val permissionState = rememberMultiplePermissionsState(permissions)
 
+    // Handle UI events
     LaunchedEffect(Unit) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED
-        ) return@LaunchedEffect
-        viewModel.loadPrinters()
-    }
-
-    LaunchedEffect(requestPermission) {
-        if (requestPermission) {
-            permissionState.launchMultiplePermissionRequest()
-            requestPermission = false
-        }
-    }
-
-    Row(modifier = modifier.fillMaxSize()) {
-        AppLazyColumn(
-            modifier = Modifier
-                .weight(2f)
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingLarge.dp),
-            contentPadding = PaddingValues(vertical = LocalSpacing.current.paddingMedium.dp)
-        ) {
-            transactions.let { state ->
-                when (state) {
-                    is UiState.Idle -> {}
-                    is UiState.Loading -> {
-                        items(2) { LoadingTransaction() }
-                    }
-                    is UiState.Success<List<GroupedTransaction>> -> {
-                        items(state.data) { transaction ->
-                            TransactionCard(
-                                modifier = Modifier,
-                                date = transaction.date,
-                                transactions = transaction.transactions,
-                                selectedTransactionId = selectedTransactionId,
-                                onSelected = {
-                                    if (it != selectedTransactionId) {
-                                        selectedTransactionId = it
-                                        viewModel.getTransactionById(selectedTransactionId)
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    is UiState.Error -> {
-                        item {
-                            AppDialog(message = state.message) { }
-                        }
-                    }
+        viewModel.uiEvents.collect { event ->
+            when (event) {
+                is UiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
             }
         }
+    }
+
+    // Load printers when permissions are granted
+    LaunchedEffect(permissionState.allPermissionsGranted) {
+        if (permissionState.allPermissionsGranted) {
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) return@LaunchedEffect
+            viewModel.loadPrinters()
+        }
+    }
+
+    // Load transaction details when selection changes
+    LaunchedEffect(selectedTransactionId) {
+        viewModel.getTransactionById(selectedTransactionId)
+    }
+
+    when (printState) {
+        is UiState.Success -> showSuccessDialog = true
+        is UiState.Error -> showErrorDialog = true
+        is UiState.Loading -> {
+            LoadingDialog("Mencetak...")
+        }
+        is UiState.Idle -> {}
+    }
+
+    // Main layout
+    Row(modifier.fillMaxSize()) {
+        // Left panel - Transaction list
+        TransactionListPanel(
+            modifier = Modifier.weight(2f),
+            transactions = transactions,
+            scrollBehavior = scrollBehavior,
+            selectedTransactionId = selectedTransactionId,
+            onTransactionSelected = { id ->
+                selectedTransactionId = id.takeIf { it != selectedTransactionId } ?: selectedTransactionId
+            }
+        )
+
+        // Divider
         VerticalDivider(
             modifier = Modifier.shadow(
                 elevation = 10.dp,
@@ -174,133 +177,217 @@ fun HistoryTabletScreen(
             ),
             color = Color.Transparent
         )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(horizontal = LocalSpacing.current.paddingMedium.dp),
-            verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingLarge.dp)
-        ) {
-            Text(
-                text = "Detail Transaksi",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            AppLazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize(),
-                contentPadding = PaddingValues(
-                    horizontal = LocalSpacing.current.paddingSmall.dp,
-                    vertical = 2.dp
-                )
-            ) {
-                item {
-                    ReceiptPreview(
-                        transactionDetail,
-                        fillPaymentTypeValue = { paymentType = it },
-                        fillCashReceivedValue = { cashReceived = it }
+
+        // Right panel - Transaction details
+        TransactionDetailPanel(
+            modifier = Modifier.weight(1f),
+            transactionDetail = transactionDetail,
+            isPrintEnabled = selectedTransactionId != -1,
+            onPrintClick = {
+                if (permissionState.allPermissionsGranted) {
+                    showPrinterDialog = true
+                } else {
+                    permissionState.launchMultiplePermissionRequest()
+                }
+            },
+            onPaymentTypeChanged = { paymentType = it },
+            onCashReceivedChanged = { cashReceived = it }
+        )
+    }
+
+    // Printer selection dialog
+    if (showPrinterDialog) {
+        PrinterSelectionDialog(
+            printers = printers,
+            selectedPrinter = selectedPrinter,
+            onPrinterSelected = { selectedPrinter = it },
+            onConfirm = {
+                selectedPrinter?.let { printer ->
+                    viewModel.printReceipt(
+                        printer = printer,
+                        paymentType = paymentType,
+                        cashReceived = cashReceived,
+                        context = context,
+                        transactionId = selectedTransactionId
                     )
                 }
-            }
-            AppButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(LocalSpacing.current.paddingMedium.dp),
-                text = "Cetak Struk",
-                enabled = selectedTransactionId != -1,
-                onClick =  {
-                    if (permissionState.allPermissionsGranted) {
-                        showPrinterDialog = true
-                    }
-                    else {
-                        requestPermission = true
-                        Toast.makeText(context, "Aplikasi memerlukan akses Bluetooth untuk mencetak struk", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                shape = CircleShape
-            )
-        }
-    }
-
-    when (val state = printState) {
-        is UiState.Idle -> {}
-        is UiState.Loading -> {
-            LoadingDialog(
-                text = "Mencetak..."
-            )
-        }
-        is UiState.Success<Boolean> -> {
-            if (state.data) {
-                showSuccessDialog = true
-                viewModel.resetPrintState()
-            }
-        }
-        is UiState.Error -> {
-            showErrorDialog = true
-            errorMessage = state.message
-            viewModel.resetPrintState()
-        }
-    }
-
-    if (showPrinterDialog) {
-        ConfirmationDialog(
-            title = "Pilih Printer",
-            onDismiss = { showPrinterDialog = false },
-            enableConfirmButton = selectedPrinter != null,
-            onConfirm = {
-                viewModel.printReceipt(
-                    printer = selectedPrinter!!,
-                    paymentType = paymentType,
-                    cashReceived = cashReceived,
-                    context = context,
-                    transactionId = selectedTransactionId
-                )
                 showPrinterDialog = false
             },
-            content = {
-                AppLazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(printers) { printer ->
-                        Text(
-                            text = printer.name,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = LocalSpacing.current.paddingMedium.dp)
-                                .background(
-                                    color = if (selectedPrinter != printer) Color.White else MaterialTheme.colorScheme.tertiary,
-                                    shape = MaterialTheme.shapes.small
-                                )
-                                .clickable {
-                                    selectedPrinter = printer
-                                }
-                        )
-                    }
-                }
+            onDismiss = { showPrinterDialog = false }
+        )
+    }
+
+    // Print success dialog
+    if (showSuccessDialog) {
+        AppDialog(
+            title = "Berhasil!",
+            message = "Struk berhasil dicetak",
+            onDismiss = {
+                showSuccessDialog = false
+                viewModel.resetPrintState()
             }
         )
     }
 
-    if (showSuccessDialog) {
-        AppDialog(
-            title = "Berhasil!",
-            message = "Struk berhasil dicetak"
-        ) { showSuccessDialog = false }
-    }
-
+    // Print error dialog
     if (showErrorDialog) {
         AppDialog(
-            message = errorMessage
-        ) { showErrorDialog = false }
+            title = "Gagal",
+            message = (printState as? UiState.Error)?.message ?: "Terjadi kesalahan saat mencetak",
+            onDismiss = {
+                showErrorDialog = false
+                viewModel.resetPrintState()
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TransactionListPanel(
+    modifier: Modifier = Modifier,
+    transactions: UiState<List<GroupedTransaction>>,
+    scrollBehavior: TopAppBarScrollBehavior,
+    selectedTransactionId: Int,
+    onTransactionSelected: (Int) -> Unit
+) {
+    AppLazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingLarge.dp),
+        contentPadding = PaddingValues(vertical = LocalSpacing.current.paddingMedium.dp)
+    ) {
+        when (transactions) {
+            is UiState.Loading -> items(2) { LoadingTransaction() }
+            is UiState.Success -> {
+                items(transactions.data) { transaction ->
+                    TransactionCard(
+                        date = transaction.date,
+                        transactions = transaction.transactions,
+                        selectedTransactionId = selectedTransactionId,
+                        onSelected = onTransactionSelected
+                    )
+                }
+            }
+            is UiState.Error -> {
+                item {
+                    ErrorMessage(message = transactions.message)
+                }
+            }
+            else -> {}
+        }
     }
 }
 
 @Composable
-fun ReceiptPreview(
+private fun TransactionDetailPanel(
+    modifier: Modifier = Modifier,
     transactionDetail: UiState<TransactionHeader>,
+    isPrintEnabled: Boolean,
+    onPrintClick: () -> Unit,
+    onPaymentTypeChanged: (String) -> Unit,
+    onCashReceivedChanged: (Long) -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(LocalSpacing.current.paddingMedium.dp),
+        verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingMedium.dp)
+    ) {
+        Text(
+            text = "Detail Transaksi",
+            style = MaterialTheme.typography.titleLarge,
+        )
+
+        when (transactionDetail) {
+            is UiState.Success<TransactionHeader> -> {
+                AppLazyColumn(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = LocalSpacing.current.paddingSmall.dp)
+                ) {
+                    item {
+                        ReceiptPreview(
+                            data = transactionDetail.data,
+                            fillPaymentTypeValue = onPaymentTypeChanged,
+                            fillCashReceivedValue = onCashReceivedChanged,
+                        )
+                    }
+                }
+            }
+            is UiState.Loading -> {
+                Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is UiState.Error -> {
+                ErrorMessage(message = transactionDetail.message)
+            }
+            else -> {
+                Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Pilih transaksi untuk melihat detail",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSecondary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Cetak Struk",
+            enabled = isPrintEnabled,
+            onClick = onPrintClick,
+            shape = CircleShape
+        )
+    }
+}
+
+@Composable
+private fun PrinterSelectionDialog(
+    printers: List<PrinterManager.BluetoothPrinter>,
+    selectedPrinter: PrinterManager.BluetoothPrinter?,
+    onPrinterSelected: (PrinterManager.BluetoothPrinter) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ConfirmationDialog(
+        title = "Pilih Printer",
+        onDismiss = onDismiss,
+        enableConfirmButton = selectedPrinter != null,
+        onConfirm = onConfirm,
+        content = {
+            AppLazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(printers) { printer ->
+                    Text(
+                        text = printer.name,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = LocalSpacing.current.paddingMedium.dp)
+                            .background(
+                                color = if (selectedPrinter != printer) Color.White
+                                else MaterialTheme.colorScheme.tertiary,
+                                shape = MaterialTheme.shapes.small
+                            )
+                            .clickable { onPrinterSelected(printer) }
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ReceiptPreview(
+    data: TransactionHeader,
     fillPaymentTypeValue: (String) -> Unit,
     fillCashReceivedValue: (Long) -> Unit
 ) {
@@ -313,127 +400,118 @@ fun ReceiptPreview(
             contentColor = MaterialTheme.colorScheme.onBackground
         )
     ) {
-        when (val state = transactionDetail) {
-            is UiState.Idle -> {}
-            is UiState.Loading -> {}
-            is UiState.Success<TransactionHeader> -> {
-                fillPaymentTypeValue(state.data.paymentType)
-                fillCashReceivedValue(state.data.cashReceived.toLong())
+        fillPaymentTypeValue(data.paymentType)
+        fillCashReceivedValue(data.cashReceived.toLong())
 
-                val totalPriceBeforeDiscount = state.data.details.sumOf { it.product.price * it.quantity }.toLong()
-                val totalPrice = state.data.details.sumOf { it.product.finalPrice * it.quantity}.toLong()
+        val totalPriceBeforeDiscount = data.details.sumOf { it.product.price * it.quantity }.toLong()
+        val totalPrice = data.details.sumOf { it.product.finalPrice * it.quantity}.toLong()
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
-                    modifier = Modifier.padding(LocalSpacing.current.paddingMedium.dp)
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.fashion24_logo_b_w),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .fillMaxWidth(0.3f)
-                            .aspectRatio(1f)
-                    )
-                    Text(
-                        text = """SMK Negeri 24 Jakarta
+        Column(
+            verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp),
+            modifier = Modifier.padding(LocalSpacing.current.paddingMedium.dp)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.fashion24_logo_b_w),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .fillMaxWidth(0.3f)
+                    .aspectRatio(1f)
+            )
+            Text(
+                text = """SMK Negeri 24 Jakarta
                                             |Jl. Bambu Hitam No.3, RT.3/RW.1, Bambu Apus, Kec. Cipayung, Kota Jakarta Timur, Daerah Khusus Ibukota Jakarta 13890
                                         """.trimMargin(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
-                    DoubleLineHorizontalDivider()
-                    Text(
-                        text = "Kasir : ${state.data.user.username}",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    DoubleLineHorizontalDivider()
-                    Spacer(Modifier.height(LocalSpacing.current.paddingMedium.dp))
-                    state.data.details.forEach { detail ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
-                        ) {
-                            Column(Modifier.weight(2f)) {
-                                Text(
-                                    text = "${detail.quantity} ${detail.product.name}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1
-                                )
-                                Text(
-                                    text = "   Size: ${detail.product.variants[0].size} | Warna: ${detail.product.variants[0].color}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1
-                                )
-                                if (detail.product.discount > 0) {
-                                    Text(
-                                        text = "   Diskon:\n   Subtotal:",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+            DoubleLineHorizontalDivider()
+            Text(
+                text = "Kasir : ${data.user.username}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            DoubleLineHorizontalDivider()
+            Spacer(Modifier.height(LocalSpacing.current.paddingMedium.dp))
+            data.details.forEach { detail ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
+                ) {
+                    Column(Modifier.weight(2f)) {
+                        Text(
+                            text = "${detail.quantity} ${detail.product.name}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "   Size: ${detail.product.variants[0].size} | Warna: ${detail.product.variants[0].color}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1
+                        )
+                        if (detail.product.discount > 0) {
                             Text(
-                                text = CoreFunction.currencyFormatter(detail.product.price.toLong()),
-                                style = MaterialTheme.typography.bodyLarge,
+                                text = "   Diskon:\n   Subtotal:",
+                                style = MaterialTheme.typography.bodyLarge
                             )
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    text = CoreFunction.currencyFormatter((detail.product.price * detail.quantity).toLong()),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.End
-                                )
-                                if (detail.product.discount > 0) {
-                                    Text(
-                                        text = "",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        text = "${CoreFunction.currencyFormatter((detail.product.price - detail.product.finalPrice).toLong())}\n${CoreFunction.currencyFormatter((detail.product.finalPrice * detail.quantity).toLong())}",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.End
-                                    )
-                                }
-                            }
                         }
                     }
-                    Spacer(Modifier.height(LocalSpacing.current.paddingMedium.dp))
-                    HorizontalDivider()
-                    TotalSection(
-                        text = "Total Item (${state.data.details.count()}) : ",
-                        number = totalPriceBeforeDiscount
-                    )
-                    TotalSection(
-                        text = "Total Disc. : ",
-                        number = totalPriceBeforeDiscount - totalPrice
-                    )
-                    TotalSection(
-                        text = "Total Belanja : ",
-                        number = totalPrice
-                    )
-                    TotalSection(
-                        text = "${state.data.paymentType} : ",
-                        number = state.data.cashReceived.toLong()
-                    )
-                    TotalSection(
-                        text = "Kembalian : ",
-                        number = state.data.changeReturned.toLong()
-                    )
-                    DoubleLineHorizontalDivider()
                     Text(
-                        text = "Terima kasih telah berbelanja!\n${state.data.createdAt}",
+                        text = CoreFunction.currencyFormatter(detail.product.price.toLong()),
                         style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(vertical = LocalSpacing.current.paddingLarge.dp)
                     )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = CoreFunction.currencyFormatter((detail.product.price * detail.quantity).toLong()),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End
+                        )
+                        if (detail.product.discount > 0) {
+                            Text(
+                                text = "",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "${CoreFunction.currencyFormatter((detail.product.price - detail.product.finalPrice).toLong())}\n${CoreFunction.currencyFormatter((detail.product.finalPrice * detail.quantity).toLong())}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.End
+                            )
+                        }
+                    }
                 }
             }
-            is UiState.Error -> {
-                AppDialog(message = state.message) { }
-            }
+            Spacer(Modifier.height(LocalSpacing.current.paddingMedium.dp))
+            HorizontalDivider()
+            TotalSection(
+                text = "Total Item (${data.details.count()}) : ",
+                number = totalPriceBeforeDiscount
+            )
+            TotalSection(
+                text = "Total Disc. : ",
+                number = totalPriceBeforeDiscount - totalPrice
+            )
+            TotalSection(
+                text = "Total Belanja : ",
+                number = totalPrice
+            )
+            TotalSection(
+                text = "${data.paymentType} : ",
+                number = data.cashReceived.toLong()
+            )
+            TotalSection(
+                text = "Kembalian : ",
+                number = data.changeReturned.toLong()
+            )
+            DoubleLineHorizontalDivider()
+            Text(
+                text = "Terima kasih telah berbelanja!\n${data.createdAt}",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = LocalSpacing.current.paddingLarge.dp)
+            )
         }
     }
 }
@@ -461,4 +539,20 @@ fun TotalSection(text: String, number: Long) {
 fun DoubleLineHorizontalDivider() {
     HorizontalDivider()
     HorizontalDivider()
+}
+
+@Composable
+private fun ErrorMessage(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
 }
