@@ -11,15 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -59,10 +56,10 @@ import com.takumi.kasirkain.domain.model.Product
 import com.takumi.kasirkain.domain.model.ProductVariant
 import com.takumi.kasirkain.domain.model.User
 import com.takumi.kasirkain.presentation.common.components.AppButton
+import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppLazyRow
 import com.takumi.kasirkain.presentation.common.components.AppLazyVerticalGrid
-import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.home.components.CategoryCard

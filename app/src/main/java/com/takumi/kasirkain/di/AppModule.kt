@@ -1,4 +1,4 @@
-package com.takumi.kasirkain
+package com.takumi.kasirkain.di
 
 import android.content.Context
 import androidx.room.Room
@@ -40,7 +40,6 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
-import java.lang.Class
 
 @Module
 @InstallIn(SingletonComponent::class)

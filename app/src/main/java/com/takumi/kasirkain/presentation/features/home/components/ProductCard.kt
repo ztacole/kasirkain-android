@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.takumi.kasirkain.AppModule
+import com.takumi.kasirkain.di.AppModule
 import com.takumi.kasirkain.presentation.theme.KasirKainTheme
 import com.takumi.kasirkain.presentation.util.CoreFunction
 import com.takumi.kasirkain.presentation.util.shimmer
