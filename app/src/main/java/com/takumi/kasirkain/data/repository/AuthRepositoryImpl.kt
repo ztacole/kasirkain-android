@@ -20,4 +20,13 @@ class AuthRepositoryImpl @Inject constructor(
         val response = remote.profile()
         return response.toDomain()
     }
+
+    override suspend fun getToken(): String? {
+        return local.getToken()
+    }
+
+    override suspend fun logout() {
+        remote.logout()
+        local.clearToken()
+    }
 }

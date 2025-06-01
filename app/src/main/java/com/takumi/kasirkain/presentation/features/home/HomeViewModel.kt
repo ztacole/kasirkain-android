@@ -3,23 +3,27 @@ package com.takumi.kasirkain.presentation.features.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.takumi.kasirkain.data.local.mapper.toCartItem
-import com.takumi.kasirkain.domain.model.CartItem
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
 import com.takumi.kasirkain.domain.model.ProductDetail
 import com.takumi.kasirkain.domain.model.ProductVariant
 import com.takumi.kasirkain.domain.model.User
 import com.takumi.kasirkain.domain.usecase.AddCartItemUseCase
-import com.takumi.kasirkain.domain.usecase.GetCartItemsUseCase
 import com.takumi.kasirkain.domain.usecase.GetCategoriesUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductVariantByBarcodeUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductVariantsUseCase
 import com.takumi.kasirkain.domain.usecase.GetUserProfileUseCase
+import com.takumi.kasirkain.domain.usecase.RemoveTokenUseCase
+import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.common.state.UiState
+import com.takumi.kasirkain.presentation.common.state.toErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,39 +34,54 @@ class HomeViewModel @Inject constructor(
     private val getProductVariantsUseCase: GetProductVariantsUseCase,
     private val getProductVariantByBarcodeUseCase: GetProductVariantByBarcodeUseCase,
     private val addCartItemUseCase: AddCartItemUseCase,
-    private val getUserProfileUseCase: GetUserProfileUseCase
-): ViewModel() {
-    private val _products: MutableStateFlow<UiState<List<Product>>> = MutableStateFlow(UiState.Idle)
-    private val _categories: MutableStateFlow<UiState<List<Category>>> = MutableStateFlow(UiState.Idle)
-    private val _productVariants: MutableStateFlow<UiState<List<ProductVariant>>> =
-        MutableStateFlow(UiState.Idle)
-    private val _productVariant: MutableStateFlow<UiState<ProductDetail>> = MutableStateFlow(UiState.Idle)
-    private val _userProfile: MutableStateFlow<User?> = MutableStateFlow(null)
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val removeTokenUseCase: RemoveTokenUseCase
+) : ViewModel() {
 
-    val products = _products.asStateFlow()
-    val categories = _categories.asStateFlow()
-    val productVariants = _productVariants.asStateFlow()
-    val productVariant = _productVariant.asStateFlow()
-    val userProfile = _userProfile.asStateFlow()
+    // UI States
+    private val _products = MutableStateFlow<UiState<List<Product>>>(UiState.Idle)
+    val products: StateFlow<UiState<List<Product>>> = _products.asStateFlow()
 
-    fun getUserProfile() {
+    private val _categories = MutableStateFlow<UiState<List<Category>>>(UiState.Idle)
+    val categories: StateFlow<UiState<List<Category>>> = _categories.asStateFlow()
+
+    private val _productVariants = MutableStateFlow<UiState<List<ProductVariant>>>(UiState.Idle)
+    val productVariants: StateFlow<UiState<List<ProductVariant>>> = _productVariants.asStateFlow()
+
+    private val _productVariant = MutableStateFlow<UiState<ProductDetail>>(UiState.Idle)
+    val productVariant: StateFlow<UiState<ProductDetail>> = _productVariant.asStateFlow()
+
+    private val _userProfile = MutableStateFlow<UiState<User>>(UiState.Idle)
+    val userProfile: StateFlow<UiState<User>> = _userProfile.asStateFlow()
+
+    private val _uiEvents = Channel<UiEvent>()
+    val uiEvents = _uiEvents.receiveAsFlow()
+
+    // Initial loading
+    init {
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
         viewModelScope.launch {
-            val response = getUserProfileUseCase()
-            _userProfile.value = response
+            launch { getCategories() }
+            launch { getUserProfile() }
+            launch { getProduct() }
         }
     }
 
-    fun getProduct(category: String? = null, search: String? = null) {
+    fun getProduct(category: Int? = null, search: String? = null) {
         _products.value = UiState.Loading
         viewModelScope.launch {
-            var categoryQuery = if (category == "" || category == "0") null else category
-            var searchQuery = if (search == "") null else search
-
             try {
-                val response = getProductUseCase(categoryQuery, searchQuery)
+                val response = getProductUseCase(
+                    category?.toString(),
+                    search?.takeUnless { it.isEmpty() }
+                )
                 _products.value = UiState.Success(response)
             } catch (e: Exception) {
-                _products.value = UiState.Error(e.message ?: "Unknown Error")
+                _products.value = UiState.Error(e.toErrorMessage())
+                _uiEvents.send(UiEvent.ShowToast(e.toErrorMessage()))
             }
         }
     }
@@ -72,12 +91,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val response = getCategoriesUseCase()
-                val categories = mutableListOf<Category>()
-                categories.add(Category(id = 0, name = "Semua"))
-                categories.addAll(response)
-                _categories.value = UiState.Success(categories)
+                val allCategories = listOf(Category(id = 0, name = "Semua")) + response
+                _categories.value = UiState.Success(allCategories)
             } catch (e: Exception) {
-                _categories.value = UiState.Error(e.message ?: "Unknown Error")
+                _categories.value = UiState.Error(e.toErrorMessage())
+                _uiEvents.send(UiEvent.ShowToast(e.toErrorMessage()))
             }
         }
     }
@@ -89,27 +107,55 @@ class HomeViewModel @Inject constructor(
                 val response = getProductVariantsUseCase(id)
                 _productVariants.value = UiState.Success(response)
             } catch (e: Exception) {
-                _productVariants.value = UiState.Error(e.message ?: "Unknown Error")
+                _productVariants.value = UiState.Error(e.toErrorMessage())
+                _uiEvents.send(UiEvent.ShowToast(e.toErrorMessage()))
             }
         }
     }
 
     fun getProductVariantDetail(barcode: String) {
+        _productVariant.value = UiState.Loading
         viewModelScope.launch {
-            _productVariant.value = UiState.Loading
             try {
-                if (barcode.isEmpty()) return@launch
                 val response = getProductVariantByBarcodeUseCase(barcode)
                 _productVariant.value = UiState.Success(response)
             } catch (e: Exception) {
-                _productVariant.value = UiState.Error(e.message ?: "Unknown Error")
+                _productVariant.value = UiState.Error(e.toErrorMessage())
+                _uiEvents.send(UiEvent.ShowToast(e.toErrorMessage()))
             }
         }
     }
 
+    fun resetProductVariantState() {
+        _productVariant.value = UiState.Idle
+    }
+
     fun addProductToCart(product: Product, productVariant: ProductVariant) {
         viewModelScope.launch {
-            addCartItemUseCase(product.toCartItem(productVariant))
+            try {
+                addCartItemUseCase(product.toCartItem(productVariant))
+                _uiEvents.send(UiEvent.ShowToast("Produk ditambahkan ke keranjang"))
+            } catch (e: Exception) {
+                _uiEvents.send(UiEvent.ShowToast("Gagal menambahkan ke keranjang: ${e.toErrorMessage()}"))
+            }
+        }
+    }
+
+    private fun getUserProfile() {
+        _userProfile.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                val response = getUserProfileUseCase()
+                _userProfile.value = UiState.Success(response)
+            } catch (e: Exception) {
+                _userProfile.value = UiState.Error(e.toErrorMessage())
+            }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            removeTokenUseCase()
         }
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.DrawerState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,7 @@ fun AppNavDrawer(
     drawerState: DrawerState,
     navController: NavHostController,
     onCloseDrawer: () -> Unit,
+    onSignOut: () -> Unit,
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -76,7 +78,9 @@ fun AppNavDrawer(
                 drawerContainerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = LocalSpacing.current.paddingSmall.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = LocalSpacing.current.paddingSmall.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
@@ -92,7 +96,9 @@ fun AppNavDrawer(
                     Icon(
                         painter = painterResource(R.drawable.kasirkain_logo),
                         contentDescription = null,
-                        modifier = Modifier.size((LocalSpacing.current.largeIconSize * 1.6).dp).padding(LocalSpacing.current.paddingSmall.dp),
+                        modifier = Modifier
+                            .size((LocalSpacing.current.largeIconSize * 1.6).dp)
+                            .padding(LocalSpacing.current.paddingSmall.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(LocalSpacing.current.paddingSmall.dp))
@@ -110,7 +116,7 @@ fun AppNavDrawer(
                         icon = {
                             Icon(
                                 painter = painterResource(if (currentRoute == item.route) item.selectedIcon else item.unselectedIcon),
-                                contentDescription = null,
+                                contentDescription = item.name,
                                 modifier = Modifier.size(LocalSpacing.current.smallIconSize.dp)
                             )
                         },
@@ -126,7 +132,9 @@ fun AppNavDrawer(
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(NavigationDrawerItemDefaults.ItemPadding),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(NavigationDrawerItemDefaults.ItemPadding),
                         colors = NavigationDrawerItemDefaults.colors(
                             selectedTextColor = MaterialTheme.colorScheme.primary,
                             selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -138,6 +146,32 @@ fun AppNavDrawer(
                         shape = MaterialTheme.shapes.medium
                     )
                 }
+                Spacer(Modifier.weight(1f))
+                HorizontalDivider()
+                NavigationDrawerItem(
+                    label = { Text("Keluar") },
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_sign_out),
+                            contentDescription = "Keluar",
+                            modifier = Modifier.size(LocalSpacing.current.smallIconSize.dp)
+                        )
+                    },
+                    selected = false,
+                    onClick = onSignOut,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSecondary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSecondary,
+                        unselectedContainerColor = Color.White
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                )
             }
         }
     ) {

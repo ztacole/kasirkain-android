@@ -103,6 +103,14 @@ fun AppNavigation(
         navController = navController,
         onCloseDrawer = {
             scope.launch { navDrawerState.close() }
+        },
+        onSignOut = {
+            viewModel.logout()
+            scope.launch { navDrawerState.close() }
+            navController.navigate(Screen.Auth.route) {
+                popUpTo(Screen.Home.route) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     ) {
         Scaffold(
