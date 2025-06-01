@@ -1,21 +1,21 @@
 package com.takumi.kasirkain.data.local
 
 import com.takumi.kasirkain.data.local.entity.CartEntity
-import com.takumi.kasirkain.data.local.entity.TokenEntity
 import com.takumi.kasirkain.domain.model.CartItem
 import javax.inject.Inject
 
 class LocalDataSource @Inject constructor(
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    private val tokenManager: TokenManager
 ) {
     suspend fun saveToken(token: String) {
-        db.tokenDao().saveToken(TokenEntity(token = token))
+        tokenManager.saveToken(token)
     }
 
-    suspend fun getToken(): String? = db.tokenDao().getToken()?.token
+    suspend fun getToken(): String? = tokenManager.getToken()
 
     suspend fun clearToken() {
-        db.tokenDao().clearToken()
+        tokenManager.clearToken()
     }
 
     suspend fun getCartItems(): List<CartEntity> {

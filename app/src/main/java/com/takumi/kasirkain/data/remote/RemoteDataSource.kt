@@ -103,6 +103,10 @@ class RemoteDataSource @Inject constructor(
         }
     }
 
+    suspend fun logout() {
+        apiService.logout()
+    }
+
     private fun errorHandling(responseBody: String?): String {
         val errorResponse = try {
             if (responseBody != null) {

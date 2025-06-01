@@ -28,7 +28,7 @@ class TokenInterceptor(
                 }
             }
 
-            return response
+            response
         }
     }
 
