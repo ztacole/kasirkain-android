@@ -58,4 +58,7 @@ interface ApiService {
 
     @GET("profile")
     suspend fun profile() : Response<BaseResponse<UserResponse>>
+
+    @POST("logout")
+    suspend fun logout()
 }
