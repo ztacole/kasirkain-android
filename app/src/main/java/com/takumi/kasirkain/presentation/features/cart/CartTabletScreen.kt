@@ -58,8 +58,6 @@ fun CartTabletScreen(
 ) {
     val cartItems by viewModel.cartItems.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
-
     LaunchedEffect(Unit) {
         viewModel.getCartItems()
     }
@@ -67,6 +65,7 @@ fun CartTabletScreen(
     Row(
         modifier = modifier.fillMaxSize()
     ) {
+        // Left Panel - Cart Item list
         AppLazyColumn(
             modifier = Modifier
                 .weight(2f)
@@ -96,14 +95,7 @@ fun CartTabletScreen(
                 )
             }
         }
-        VerticalDivider(
-            modifier = Modifier.shadow(
-                elevation = 10.dp,
-                spotColor = Black.copy(alpha = 0.3f),
-                ambientColor = Black.copy(alpha = 0.3f)
-            ),
-            color = Color.Transparent
-        )
+        // Right Panel -
         Column(
             modifier = Modifier
                 .weight(1f)

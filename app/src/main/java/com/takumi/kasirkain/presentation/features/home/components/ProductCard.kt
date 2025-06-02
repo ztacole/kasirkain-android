@@ -117,12 +117,12 @@ fun ProductCard(
 fun TabletProductCard(
     modifier: Modifier = Modifier,
     name: String,
+    onClick: () -> Unit,
     variantCount: Int,
     price: Int,
     imageName: String,
     discount: Int,
-    finalPrice: Int,
-    onClick: () -> Unit
+    finalPrice: Int
 ) {
     val context = LocalContext.current
     val imageUrl = remember(imageName) {
@@ -134,8 +134,7 @@ fun TabletProductCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            focusedElevation = 6.dp
+            defaultElevation = 2.dp
         ),
         onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)

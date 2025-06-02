@@ -64,9 +64,9 @@ class HomeViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            launch { getProduct() }
             launch { getCategories() }
             launch { getUserProfile() }
-            launch { getProduct() }
         }
     }
 

@@ -25,8 +25,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition {
             splashViewModel.isLoading.value

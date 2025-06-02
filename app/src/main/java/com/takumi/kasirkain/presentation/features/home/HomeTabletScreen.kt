@@ -2,19 +2,17 @@ package com.takumi.kasirkain.presentation.features.home
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -38,7 +36,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -57,6 +54,10 @@ import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppLazyRow
 import com.takumi.kasirkain.presentation.common.components.AppLazyVerticalGrid
+import com.takumi.kasirkain.presentation.common.components.ErrorMessage
+import com.takumi.kasirkain.presentation.common.components.LoadingIndicator
+import com.takumi.kasirkain.presentation.common.state.ScannerState
+import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.home.components.CategoryCard
 import com.takumi.kasirkain.presentation.features.home.components.LoadingTabletProduct
@@ -64,8 +65,6 @@ import com.takumi.kasirkain.presentation.features.home.components.ProductVariant
 import com.takumi.kasirkain.presentation.features.home.components.SearchTextField
 import com.takumi.kasirkain.presentation.features.home.components.ShowCurrentTime
 import com.takumi.kasirkain.presentation.features.home.components.TabletProductCard
-import com.takumi.kasirkain.presentation.common.state.ScannerState
-import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialog
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.navigation.RequestCameraPermission
@@ -172,7 +171,7 @@ fun HomeTabletScreen(
     Row(modifier.fillMaxSize()) {
         // Left content (2/3 width)
         Column(Modifier.weight(2f)) {
-            TabletHomeHeaderSection(
+            HeaderSection(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
                 userProfile = userProfile,
@@ -182,7 +181,7 @@ fun HomeTabletScreen(
                 onBarcodeScanning = { scannerState = ScannerState.RequestPermission }
             )
 
-            TabletHomeContentSection(
+            ProductListPanel(
                 scrollBehavior = scrollBehavior,
                 products = products,
                 onProductClick = { product ->
@@ -202,7 +201,7 @@ fun HomeTabletScreen(
         )
 
         // Right sidebar (1/3 width)
-        TabletHomeSideSection(
+        ProductVariantListPanel(
             modifier = Modifier
                 .weight(1f)
                 .background(MaterialTheme.colorScheme.primaryContainer),
@@ -219,7 +218,7 @@ fun HomeTabletScreen(
 }
 
 @Composable
-private fun TabletHomeHeaderSection(
+private fun HeaderSection(
     query: String,
     onQueryChange: (String) -> Unit,
     userProfile: UiState<User>,
@@ -257,7 +256,9 @@ private fun TabletHomeHeaderSection(
 
         // Search and scan row
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -324,7 +325,7 @@ private fun TabletHomeHeaderSection(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TabletHomeContentSection(
+private fun ProductListPanel(
     scrollBehavior: TopAppBarScrollBehavior,
     products: UiState<List<Product>>,
     onProductClick: (Product) -> Unit,
@@ -355,96 +356,92 @@ private fun TabletHomeContentSection(
             is UiState.Loading -> {
                 items(4) { LoadingTabletProduct() }
             }
+            is UiState.Error -> {
+                item(span = { GridItemSpan(4) }) {
+                    ErrorMessage(products.message)
+                }
+            }
             else -> {}
         }
     }
 }
 
 @Composable
-private fun TabletHomeSideSection(
+private fun ProductVariantListPanel(
     selectedProduct: Product?,
     productVariants: UiState<List<ProductVariant>>,
     onAddToCart: (ProductVariant) -> Unit,
     onNavigateToCart: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier.padding(16.dp)) {
-        if (selectedProduct == null) {
-            EmptyProductSelection()
-        } else {
-            when (productVariants) {
-                is UiState.Success -> {
-                    ProductVariantList(
-                        product = selectedProduct,
-                        variants = productVariants.data,
-                        onAddToCart = onAddToCart,
-                        onNavigateToCart = onNavigateToCart
+    Column(modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = selectedProduct?.name ?: "Varian Produk",
+            style = MaterialTheme.typography.titleLarge,
+        )
+        when (productVariants) {
+            is UiState.Success -> {
+                if (productVariants.data.isEmpty()){
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Produk ini belum memiliki varian",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                } else {
+                    AppLazyColumn(
+                        Modifier.fillMaxSize().weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(vertical = 16.dp)
+                    ) {
+                        items(productVariants.data, key = { it.id }) { variant ->
+                            ProductVariantCard(
+                                modifier = Modifier,
+                                barcode = variant.barcode,
+                                size = variant.size,
+                                color = variant.color,
+                                stock = variant.stock,
+                                onClick = {
+                                    onAddToCart(variant)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            is UiState.Loading -> {
+                LoadingIndicator(Modifier.weight(1f))
+            }
+            is UiState.Error -> {
+                ErrorMessage(productVariants.message)
+            }
+            else -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Pilih produk terlebih dahulu",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSecondary,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                is UiState.Loading -> {
-                    // Show loading variants
-                }
-                else -> {}
             }
         }
-    }
-}
-
-@Composable
-private fun EmptyProductSelection() {
-    Box(Modifier.fillMaxSize()) {
-        Text(
-            text = "Varian Produk",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.align(Alignment.TopStart)
-        )
-        Text(
-            text = "Pilih produk terlebih dahulu",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSecondary,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
-
-@Composable
-private fun ProductVariantList(
-    product: Product,
-    variants: List<ProductVariant>,
-    onAddToCart: (ProductVariant) -> Unit,
-    onNavigateToCart: () -> Unit
-) {
-    Column(Modifier.fillMaxSize()) {
-        Text(
-            text = product.name,
-            style = MaterialTheme.typography.titleLarge,
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        AppLazyColumn(
-            Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
-        ) {
-            items(variants, key = { it.id }) { variant ->
-                ProductVariantCard(
-                    modifier = Modifier,
-                    barcode = variant.barcode,
-                    size = variant.size,
-                    color = variant.color,
-                    stock = variant.stock,
-                    onClick = {
-                        onAddToCart(variant)
-                    }
-                )
-            }
-        }
-
         AppButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Buka Keranjang",
             onClick = onNavigateToCart,
-            modifier = Modifier.fillMaxWidth(),
             shape = CircleShape
         )
     }

@@ -64,7 +64,9 @@ import com.takumi.kasirkain.presentation.common.components.AppButton
 import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.ConfirmationDialog
 import com.takumi.kasirkain.presentation.common.components.AppDialog
+import com.takumi.kasirkain.presentation.common.components.ErrorMessage
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
+import com.takumi.kasirkain.presentation.common.components.LoadingIndicator
 import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.history.components.TransactionCard
@@ -167,17 +169,6 @@ fun HistoryTabletScreen(
                 selectedTransactionId = id.takeIf { it != selectedTransactionId } ?: selectedTransactionId
             }
         )
-
-        // Divider
-        VerticalDivider(
-            modifier = Modifier.shadow(
-                elevation = 10.dp,
-                spotColor = Black.copy(alpha = 0.3f),
-                ambientColor = Black.copy(alpha = 0.3f)
-            ),
-            color = Color.Transparent
-        )
-
         // Right panel - Transaction details
         TransactionDetailPanel(
             modifier = Modifier.weight(1f),
@@ -319,15 +310,18 @@ private fun TransactionDetailPanel(
                 }
             }
             is UiState.Loading -> {
-                Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                LoadingIndicator(Modifier.weight(1f))
             }
             is UiState.Error -> {
                 ErrorMessage(message = transactionDetail.message)
             }
             else -> {
-                Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = "Pilih transaksi untuk melihat detail",
                         style = MaterialTheme.typography.bodyLarge,
@@ -539,20 +533,4 @@ fun TotalSection(text: String, number: Long) {
 fun DoubleLineHorizontalDivider() {
     HorizontalDivider()
     HorizontalDivider()
-}
-
-@Composable
-private fun ErrorMessage(message: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
 }

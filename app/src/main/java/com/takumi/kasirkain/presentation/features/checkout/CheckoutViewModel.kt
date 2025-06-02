@@ -11,6 +11,7 @@ import com.takumi.kasirkain.domain.usecase.ClearCartUseCase
 import com.takumi.kasirkain.domain.usecase.GetCartItemsUseCase
 import com.takumi.kasirkain.domain.usecase.PrintReceiptUseCase
 import com.takumi.kasirkain.presentation.common.state.UiState
+import com.takumi.kasirkain.presentation.common.state.toErrorMessage
 import com.takumi.kasirkain.presentation.util.PrinterManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,7 +63,7 @@ class CheckoutViewModel @Inject constructor(
                 clearCartUseCase()
                 _checkoutState.value = UiState.Success(result.id)
             } catch (e: Exception) {
-                _checkoutState.value = UiState.Error(e.message ?: "Unknown Error")
+                _checkoutState.value = UiState.Error(e.toErrorMessage())
             }
         }
     }

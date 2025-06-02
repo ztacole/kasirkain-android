@@ -5,25 +5,23 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,11 +46,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.takumi.kasirkain.R
 import com.takumi.kasirkain.presentation.common.components.AppButton
+import com.takumi.kasirkain.presentation.common.components.AppDialog
 import com.takumi.kasirkain.presentation.common.components.AppDropdown
+import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.AppOutlinedButton
 import com.takumi.kasirkain.presentation.common.components.ConfirmationDialog
-import com.takumi.kasirkain.presentation.common.components.AppDialog
-import com.takumi.kasirkain.presentation.common.components.AppLazyColumn
 import com.takumi.kasirkain.presentation.common.components.LoadingDialog
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.features.checkout.components.RupiahTextField
@@ -85,10 +83,6 @@ fun CheckoutTabletScreen(
     var showBackDialog by remember { mutableStateOf(false) }
     var showPayDialog by remember { mutableStateOf(false) }
     var showPrinterDialog by remember { mutableStateOf(false) }
-    var showErrorDialog by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
-
-    var errorMessage by remember { mutableStateOf("") }
 
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         listOf(
@@ -124,130 +118,26 @@ fun CheckoutTabletScreen(
     Row(
         modifier = modifier.fillMaxSize()
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(2f)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.fashion24_qris),
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
-        ) {
-            Text(
-                text = "Pembayaran",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-            ) {
-                Text(
-                    text = "Nominal yang harus dibayar :",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = CoreFunction.rupiahFormatter(totalPayment.toLong()),
-                    style = MaterialTheme.typography.headlineLarge
-                )
-                Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
-                AppDropdown(
-                    modifier = Modifier.fillMaxWidth(),
-                    options = paymentTypes,
-                    value = selectedPaymentType
-                ) {
-                    selectedPaymentType = it
-                }
-                Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
-                Text(
-                    text = "Nominal",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSecondary
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Rp ",
-                        style = MaterialTheme.typography.headlineLarge
-                    )
-                    RupiahTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = paymentAmount,
-                        onValueChange = { paymentAmount = it }
-                    )
-                }
-                Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
-
-                if (change > 0) {
-                    Column {
-                        Text(
-                            text = "Kembalian :",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSecondary
-                        )
-                        Text(
-                            text = CoreFunction.rupiahFormatter(change),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                } else if (change < 0) {
-                    Column {
-                        Text(
-                            text = "Kurang Bayar :",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = CoreFunction.rupiahFormatter(-change),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+        QRISPanel(Modifier.weight(2f))
+        CheckoutPanel(
+            modifier = Modifier.weight(1f),
+            scrollState = scrollState,
+            totalPayment = totalPayment,
+            paymentTypes = paymentTypes,
+            selectedPaymentType = selectedPaymentType,
+            onPaymentTypeChange = { selectedPaymentType = it },
+            paymentAmount = paymentAmount,
+            onPaymentAmountChange = { paymentAmount = it },
+            change = change,
+            onNavigateBack = {
+                if (paymentAmount != 0L && selectedPaymentType != "Metode pembayaran") {
+                    showBackDialog = true
+                } else onNavigateBack()
+            },
+            onCheckout = {
+                showPayDialog = true
             }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = LocalSpacing.current.paddingMedium.dp, top = LocalSpacing.current.paddingSmall.dp),
-                horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
-            ) {
-                AppOutlinedButton(
-                    text = "Kembali",
-                    shape = CircleShape,
-                    onClick = {
-                        if (paymentAmount != 0L && selectedPaymentType != "Metode pembayaran") {
-                            showBackDialog = true
-                        } else onNavigateBack()
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-                AppButton(
-                    text = "Selesai & Cetak",
-                    shape = CircleShape,
-                    enabled = change >= 0 && selectedPaymentType != "Metode pembayaran",
-                    onClick = {
-                        showPayDialog = true
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-            }
-        }
+        )
 
         if (showBackDialog) {
             ConfirmationDialog(
@@ -303,9 +193,11 @@ fun CheckoutTabletScreen(
             viewModel.resetCheckoutState()
         }
         is UiState.Error -> {
-            showErrorDialog = true
-            errorMessage = state.message
-            viewModel.resetCheckoutState()
+            AppDialog(
+                message = state.message
+            ) {
+                viewModel.resetCheckoutState()
+            }
         }
     }
 
@@ -317,15 +209,21 @@ fun CheckoutTabletScreen(
             )
         }
         is UiState.Success<Boolean> -> {
-            if (state.data) {
-                showSuccessDialog = true
+            AppDialog(
+                title = "Berhasil!",
+                message = "Struk berhasil dicetak"
+            ) {
+                viewModel.resetPrintState()
+                onCheckout()
             }
-            viewModel.resetPrintState()
         }
         is UiState.Error -> {
-            showErrorDialog = true
-            errorMessage = state.message
-            viewModel.resetPrintState()
+            AppDialog(
+                message = state.message
+            ) {
+                viewModel.resetPrintState()
+                onCheckout()
+            }
         }
     }
 
@@ -371,23 +269,143 @@ fun CheckoutTabletScreen(
             }
         )
     }
+}
 
-    if (showSuccessDialog) {
-        AppDialog(
-            title = "Berhasil!",
-            message = "Struk berhasil dicetak"
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CheckoutPanel(
+    modifier: Modifier = Modifier,
+    scrollState: ScrollState,
+    totalPayment: Int,
+    paymentTypes: List<String>,
+    selectedPaymentType: String,
+    onPaymentTypeChange: (String) -> Unit,
+    paymentAmount: Long,
+    onPaymentAmountChange: (Long) -> Unit,
+    change: Long,
+    onNavigateBack: () -> Unit,
+    onCheckout: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
+    ) {
+        Text(
+            text = "Pembayaran",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(LocalSpacing.current.paddingSmall.dp))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
         ) {
-            showSuccessDialog = false
-            onCheckout()
+            Text(
+                text = "Nominal yang harus dibayar :",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = CoreFunction.rupiahFormatter(totalPayment.toLong()),
+                style = MaterialTheme.typography.headlineLarge
+            )
+            Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
+            AppDropdown(
+                modifier = Modifier.fillMaxWidth(),
+                options = paymentTypes,
+                value = selectedPaymentType
+            ) {
+                onPaymentTypeChange(it)
+            }
+            Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
+            Text(
+                text = "Nominal",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSecondary
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Rp ",
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                RupiahTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = paymentAmount,
+                    onValueChange = { onPaymentAmountChange(it) }
+                )
+            }
+            Spacer(Modifier.height(LocalSpacing.current.paddingLarge.dp))
+
+            if (change > 0) {
+                Column {
+                    Text(
+                        text = "Kembalian :",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
+                    Text(
+                        text = CoreFunction.rupiahFormatter(change),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            } else if (change < 0) {
+                Column {
+                    Text(
+                        text = "Kurang Bayar :",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = CoreFunction.rupiahFormatter(-change),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    bottom = LocalSpacing.current.paddingMedium.dp,
+                    top = LocalSpacing.current.paddingSmall.dp
+                ),
+            horizontalArrangement = Arrangement.spacedBy(LocalSpacing.current.paddingSmall.dp)
+        ) {
+            AppOutlinedButton(
+                text = "Kembali",
+                shape = CircleShape,
+                onClick = onNavigateBack,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            )
+            AppButton(
+                text = "Selesai & Cetak",
+                shape = CircleShape,
+                enabled = change >= 0 && selectedPaymentType != "Metode pembayaran",
+                onClick = onCheckout,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            )
         }
     }
+}
 
-    if (showErrorDialog) {
-        AppDialog(
-            message = errorMessage
-        ) {
-            showErrorDialog = false
-            onCheckout()
-        }
+@Composable
+private fun QRISPanel(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Image(
+            painter = painterResource(R.drawable.fashion24_qris),
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
