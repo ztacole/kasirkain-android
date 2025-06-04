@@ -10,4 +10,18 @@ data class ProductDetail(
     val activeEvents: List<Event>,
     val discount: Int,
     val finalPrice: Int,
-)
+) {
+    fun toProduct(): Product {
+        return Product(
+            id = id,
+            name = name,
+            price = price,
+            image = image,
+            category = category,
+            variantCount = variants.size,
+            activeEvents = activeEvents,
+            discount = discount,
+            finalPrice = finalPrice
+        )
+    }
+}

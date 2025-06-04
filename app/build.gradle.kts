@@ -83,6 +83,10 @@ dependencies {
     // Optional permission helper
     implementation("com.google.accompanist:accompanist-permissions:0.30.1")
 
+    // Paging Source
+    implementation("androidx.paging:paging-runtime-ktx:3.2.1")
+    implementation("androidx.paging:paging-compose:3.2.1")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -2,6 +2,8 @@ package com.takumi.kasirkain.presentation.features.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.takumi.kasirkain.data.local.mapper.toCartItem
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
@@ -15,14 +17,18 @@ import com.takumi.kasirkain.domain.usecase.GetProductVariantByBarcodeUseCase
 import com.takumi.kasirkain.domain.usecase.GetProductVariantsUseCase
 import com.takumi.kasirkain.domain.usecase.GetUserProfileUseCase
 import com.takumi.kasirkain.domain.usecase.RemoveTokenUseCase
+import com.takumi.kasirkain.presentation.common.state.LoadState
 import com.takumi.kasirkain.presentation.common.state.UiEvent
 import com.takumi.kasirkain.presentation.common.state.UiState
 import com.takumi.kasirkain.presentation.common.state.toErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,8 +45,8 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     // UI States
-    private val _products = MutableStateFlow<UiState<List<Product>>>(UiState.Idle)
-    val products: StateFlow<UiState<List<Product>>> = _products.asStateFlow()
+    private val _products = MutableStateFlow<PagingData<Product>>(PagingData.empty())
+    val products: StateFlow<PagingData<Product>> = _products.asStateFlow()
 
     private val _categories = MutableStateFlow<UiState<List<Category>>>(UiState.Idle)
     val categories: StateFlow<UiState<List<Category>>> = _categories.asStateFlow()
@@ -57,6 +63,9 @@ class HomeViewModel @Inject constructor(
     private val _uiEvents = Channel<UiEvent>()
     val uiEvents = _uiEvents.receiveAsFlow()
 
+    private val _loadState = MutableStateFlow<LoadState>(LoadState.NotLoading)
+    val loadState: StateFlow<LoadState> = _loadState.asStateFlow()
+
     // Initial loading
     init {
         loadInitialData()
@@ -71,19 +80,20 @@ class HomeViewModel @Inject constructor(
     }
 
     fun getProduct(category: Int? = null, search: String? = null) {
-        _products.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                val response = getProductUseCase(
-                    category?.toString(),
-                    search?.takeUnless { it.isEmpty() }
-                )
-                _products.value = UiState.Success(response)
-            } catch (e: Exception) {
-                _products.value = UiState.Error(e.toErrorMessage())
-                _uiEvents.send(UiEvent.ShowToast(e.toErrorMessage()))
-            }
+            getProductUseCase(
+                category?.toString(),
+                search?.takeUnless { it.isEmpty() }
+            )
+                .cachedIn(viewModelScope)
+                .collect { pagingData ->
+                    _products.value = pagingData
+                }
         }
+    }
+
+    fun setLoadState(state: LoadState) {
+        _loadState.value = state
     }
 
     fun getCategories() {

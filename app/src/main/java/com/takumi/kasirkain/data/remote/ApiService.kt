@@ -26,6 +26,8 @@ interface ApiService {
 
     @GET("products")
     suspend fun getProduct(
+        @Query("page") page: Int?,
+        @Query("per_page") perPage: Int?,
         @Query("category") category: String?,
         @Query("search") search: String?
     ): Response<BaseResponse<List<ProductResponse>>>

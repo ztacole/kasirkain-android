@@ -14,10 +14,12 @@ class ProductRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource
 ): ProductRepository {
     override suspend fun getProduct(
+        page: Int?,
+        perPage: Int?,
         category: String?,
         search: String?
     ): List<Product> {
-        val response = remoteDataSource.getProduct(category, search)
+        val response = remoteDataSource.getProduct(page, perPage, category, search)
         return response.map { it.toDomain() }
     }
 

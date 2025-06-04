@@ -67,8 +67,8 @@ fun LoginForm(
                 ) {
                     Icon(
                         painter = painterResource(
-                            if (showPassword) R.drawable.ic_eye_closed
-                            else R.drawable.ic_eye_open
+                            if (showPassword) R.drawable.ic_eye_open
+                            else R.drawable.ic_eye_closed
                         ),
                         contentDescription = null
                     )

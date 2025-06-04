@@ -95,13 +95,13 @@ fun CartTabletScreen(
                 )
             }
         }
-        // Right Panel -
+        // Right Panel - Detail
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(horizontal = LocalSpacing.current.paddingMedium.dp)
+                .padding(LocalSpacing.current.paddingMedium.dp)
         ) {
             Text(
                 text = "Transaksi",
@@ -178,10 +178,7 @@ fun CartTabletScreen(
                     onClick = {
                         onNavigateToCheckoutScreen()
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = LocalSpacing.current.paddingMedium.dp)
-
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

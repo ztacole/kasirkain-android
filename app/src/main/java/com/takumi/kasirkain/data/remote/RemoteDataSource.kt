@@ -28,8 +28,8 @@ class RemoteDataSource @Inject constructor(
         }
     }
 
-    suspend fun getProduct(category: String?, search: String?): List<ProductResponse> {
-        val response = apiService.getProduct(category, search)
+    suspend fun getProduct(page: Int?, perPage: Int?, category: String?, search: String?): List<ProductResponse> {
+        val response = apiService.getProduct(page, perPage, category, search)
         if (response.isSuccessful) {
             return response.body()?.data ?: emptyList()
         } else {

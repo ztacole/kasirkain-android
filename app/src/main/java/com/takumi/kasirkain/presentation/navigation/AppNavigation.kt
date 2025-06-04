@@ -6,7 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.waterfall
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -114,7 +119,7 @@ fun AppNavigation(
         }
     ) {
         Scaffold(
-            contentWindowInsets = WindowInsets.ime,
+            contentWindowInsets = WindowInsets.waterfall,
             topBar = {
                 if (currentRoute != Screen.Auth.route && currentRoute != "splash") {
                     AppTopBar(
@@ -125,7 +130,7 @@ fun AppNavigation(
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().navigationBarsPadding()
         ) { innerPadding ->
             NavHost(
                 navController = navController,

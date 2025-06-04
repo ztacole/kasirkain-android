@@ -205,7 +205,8 @@ private fun PriceSection(
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(vertical = 4.dp)
         )
 
         if (discount > 0) {

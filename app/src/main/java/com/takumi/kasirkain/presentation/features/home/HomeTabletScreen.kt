@@ -16,6 +16,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -44,6 +48,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.takumi.kasirkain.R
 import com.takumi.kasirkain.domain.model.Category
 import com.takumi.kasirkain.domain.model.Product
@@ -69,6 +77,8 @@ import com.takumi.kasirkain.presentation.features.scan.components.AfterScanDialo
 import com.takumi.kasirkain.presentation.features.scan.components.ScannerBottomSheet
 import com.takumi.kasirkain.presentation.navigation.RequestCameraPermission
 import com.takumi.kasirkain.presentation.theme.Black
+import kotlinx.coroutines.delay
+import com.takumi.kasirkain.presentation.common.state.LoadState as AppLoadState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,19 +91,37 @@ fun HomeTabletScreen(
     val context = LocalContext.current
 
     // Collect states
-    val products by viewModel.products.collectAsStateWithLifecycle()
+    val products = viewModel.products.collectAsLazyPagingItems()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val productVariants by viewModel.productVariants.collectAsStateWithLifecycle()
     val productVariant by viewModel.productVariant.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     // Local states
+    val loadState = products.loadState
     var scannerState by remember { mutableStateOf<ScannerState>(ScannerState.Idle) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableIntStateOf(0) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
 
     // Handle UI events
+    LaunchedEffect(loadState) {
+        snapshotFlow { loadState.refresh }
+            .collect { state ->
+                when(state) {
+                    is LoadState.Loading -> {
+                        viewModel.setLoadState(AppLoadState.Loading)
+                    }
+                    is LoadState.Error -> {
+                        viewModel.setLoadState(AppLoadState.Error(state.error.localizedMessage.orEmpty()))
+                    }
+                    else -> {
+                        viewModel.setLoadState(AppLoadState.NotLoading)
+                    }
+                }
+            }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.uiEvents.collect { event ->
             when (event) {
@@ -105,7 +133,17 @@ fun HomeTabletScreen(
     }
 
     // Effects
-    LaunchedEffect(selectedCategory, searchQuery) {
+    LaunchedEffect(selectedCategory) {
+        products.refresh()
+        viewModel.getProduct(
+            category = selectedCategory.takeIf { it > 0 },
+            search = searchQuery.takeUnless { it.isEmpty() }
+        )
+    }
+
+    LaunchedEffect(searchQuery) {
+        products.refresh()
+        delay(300)
         viewModel.getProduct(
             category = selectedCategory.takeIf { it > 0 },
             search = searchQuery.takeUnless { it.isEmpty() }
@@ -152,9 +190,8 @@ fun HomeTabletScreen(
                 product = state.data,
                 onDismissRequest = { viewModel.resetProductVariantState() },
                 onAddToCart = { variant ->
-                    selectedProduct?.let { product ->
-                        viewModel.addProductToCart(product, variant!!)
-                    }
+                    if (variant == null) return@AfterScanDialog
+                    viewModel.addProductToCart(state.data.toProduct(), variant)
                 }
             )
         }
@@ -232,7 +269,7 @@ private fun HeaderSection(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.White)
-            .padding(vertical = 8.dp),
+            .padding(top = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // User profile
@@ -244,9 +281,7 @@ private fun HeaderSection(
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
-            else -> {
-                // Show skeleton loading if needed
-            }
+            else -> {  }
         }
 
         // Current time
@@ -327,7 +362,7 @@ private fun HeaderSection(
 @Composable
 private fun ProductListPanel(
     scrollBehavior: TopAppBarScrollBehavior,
-    products: UiState<List<Product>>,
+    products: LazyPagingItems<Product>,
     onProductClick: (Product) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -338,30 +373,56 @@ private fun ProductListPanel(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(16.dp)
     ) {
-        when (products) {
-            is UiState.Success -> {
-                items(products.data, key = { it.id }) { product ->
-                    TabletProductCard(
-                        modifier = Modifier,
-                        name = product.name,
-                        price = product.price,
-                        variantCount = product.variantCount,
-                        imageName = product.image,
-                        discount = product.discount,
-                        finalPrice = product.finalPrice,
-                        onClick = { onProductClick(product) }
-                    )
-                }
+        items(products.itemCount) { index ->
+            val product = products[index]
+            product?.let {
+                TabletProductCard(
+                    modifier = Modifier,
+                    name = product.name,
+                    price = product.price,
+                    variantCount = product.variantCount,
+                    imageName = product.image,
+                    discount = product.discount,
+                    finalPrice = product.finalPrice,
+                    onClick = { onProductClick(product) }
+                )
             }
-            is UiState.Loading -> {
+        }
+
+        when {
+            products.loadState.refresh is LoadState.Loading -> {
                 items(4) { LoadingTabletProduct() }
             }
-            is UiState.Error -> {
+            products.loadState.append is LoadState.Loading -> {
+                items(4) { LoadingTabletProduct() }
+            }
+            products.loadState.refresh is LoadState.Error -> {
+                val error = products.loadState.refresh as LoadState.Error
                 item(span = { GridItemSpan(4) }) {
-                    ErrorMessage(products.message)
+                    ErrorItem(error = error.error, onRetry = { products.retry() })
                 }
             }
-            else -> {}
+            products.loadState.append is LoadState.Error -> {
+                val error = products.loadState.append as LoadState.Error
+                item(span = { GridItemSpan(4) }) {
+                    ErrorItem(error = error.error, onRetry = { products.retry() })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorItem(
+    error: Throwable,
+    onRetry: () -> Unit
+) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        IconButton(onRetry) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Segarkan"
+            )
         }
     }
 }

@@ -14,6 +14,7 @@ fun DiscountBadge(discount: Int) {
         text = "$discount%",
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
+        maxLines = 1,
         modifier = Modifier
             .background(
                 color = MaterialTheme.colorScheme.tertiary,
