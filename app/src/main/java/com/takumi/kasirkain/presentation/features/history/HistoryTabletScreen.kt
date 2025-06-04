@@ -365,13 +365,13 @@ private fun PrinterSelectionDialog(
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = LocalSpacing.current.paddingMedium.dp)
                             .background(
                                 color = if (selectedPrinter != printer) Color.White
                                 else MaterialTheme.colorScheme.tertiary,
                                 shape = MaterialTheme.shapes.small
                             )
                             .clickable { onPrinterSelected(printer) }
+                            .padding(vertical = LocalSpacing.current.paddingSmall.dp)
                     )
                 }
             }
