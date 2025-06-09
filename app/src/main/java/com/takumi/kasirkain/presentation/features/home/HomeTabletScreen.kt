@@ -367,7 +367,7 @@ private fun ProductListPanel(
     modifier: Modifier = Modifier
 ) {
     AppLazyVerticalGrid(
-        columns = GridCells.Fixed(4),
+        columns = GridCells.Fixed(3),
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -391,10 +391,10 @@ private fun ProductListPanel(
 
         when {
             products.loadState.refresh is LoadState.Loading -> {
-                items(4) { LoadingTabletProduct() }
+                items(3) { LoadingTabletProduct() }
             }
             products.loadState.append is LoadState.Loading -> {
-                items(4) { LoadingTabletProduct() }
+                items(3) { LoadingTabletProduct() }
             }
             products.loadState.refresh is LoadState.Error -> {
                 val error = products.loadState.refresh as LoadState.Error
