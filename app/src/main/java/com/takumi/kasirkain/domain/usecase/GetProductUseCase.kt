@@ -16,10 +16,10 @@ class GetProductUseCase @Inject constructor(
     operator fun invoke(category: String?, search: String?): Flow<PagingData<Product>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 8,
+                pageSize = 12,
                 enablePlaceholders = false,
-                initialLoadSize = 8,
-                prefetchDistance = 4
+                initialLoadSize = 12,
+                prefetchDistance = 6
             ),
             pagingSourceFactory = {
                 ProductPagingSource(repository, category, search)
