@@ -119,13 +119,13 @@ fun BarcodeScannerCamera(
                                         .addOnSuccessListener { barcodes ->
                                             for (barcode in barcodes) {
                                                 barcode.boundingBox?.let { barcodeBox ->
-                                                    if (scanRect.contains(barcodeBox)) {
+//                                                    if (scanRect.contains(barcodeBox)) {
                                                         barcode.rawValue?.let {
                                                             scanned = true
                                                             cameraProvider.unbindAll()
                                                             onBarcodeScanned(it)
                                                         }
-                                                    }
+//                                                    }
                                                 }
                                             }
                                         }
@@ -265,7 +265,7 @@ fun BarcodeScannerCamera(
                 val infiniteTransition = rememberInfiniteTransition(label = "scan_line")
                 val yPosition by infiniteTransition.animateFloat(
                     initialValue = 0f,
-                    targetValue = rectHeight * 2,
+                    targetValue = rectHeight,
                     animationSpec = infiniteRepeatable(
                         animation = tween(2000, easing = LinearEasing),
                         repeatMode = RepeatMode.Restart

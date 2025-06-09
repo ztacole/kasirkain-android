@@ -51,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -440,7 +441,8 @@ private fun ReceiptPreview(
                         Text(
                             text = "   Size: ${detail.product.variants[0].size} | Warna: ${detail.product.variants[0].color}",
                             style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (detail.product.discount > 0) {
                             Text(
