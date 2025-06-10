@@ -132,6 +132,10 @@ fun HistoryTabletScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        permissionState.launchMultiplePermissionRequest()
+    }
+
     // Load printers when permissions are granted
     LaunchedEffect(permissionState.allPermissionsGranted) {
         if (permissionState.allPermissionsGranted) {
